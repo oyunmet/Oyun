@@ -1,0 +1,16 @@
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+  background: #091523;
+}
+
+body {
+  min-width: 320px;
+}
+
+.saraya-current-root {
+  min-height: 100vh;
+  background: #091523;
+}
