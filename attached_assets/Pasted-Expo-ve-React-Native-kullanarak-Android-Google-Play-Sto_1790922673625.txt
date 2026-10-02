@@ -1,0 +1,39 @@
+Expo ve React Native kullanarak Android (Google Play Store) uyumlu, 2D piksel veya vektör tarzında bir mobil platform/macera oyunu geliştirmek istiyorum.
+
+1. Genel Oyun Teması & Hikaye Döngüsü:
+   - Ana karakterimiz bölümlerdeki engelleri aşarak her bölümün sonundaki saraya ulaşmaya çalışır.
+   - Sarayda prenses bizi beklemektedir. Karakter prensese tam yaklaştığı sırada bir atlı gelir, toz bulutu ve kaçış ses efekti eşliğinde prensesi kaçırır.
+   - Bu kaçırılma sahnesinin ardından "Bölüm Tamamlandı!" ekranı açılır ve bir sonraki zorlu bölümün kilidi açılır.
+   - Oyun sonsuz bir bölüm ilerlemesine (infinite progression) sahiptir. Her yeni bölümde engel çeşitliliği, tuzak sıklığı ve harita zorluğu artar.
+
+2. Karakter Gelişimi & Mağaza Sistemi (Shop & Upgrades):
+   - Bölümler içerisinde toplanabilir Altınlar, Mücevherler (Gems) ve Can (HP) takviyeleri bulunur.
+   - Oyuncu, topladığı bu para birimleriyle "Mağaza / Upgrade" menüsünden karakter özelliklerini kalıcı olarak geliştirebilir:
+     * Temel Özellikler: Hız (Speed), Zıplama Yüksekliği (Jump Force), Maksimum Can Sayısı (Max HP), Zırh (Dayanıklılık).
+     * Özel Yetenekler & Pasifler: 
+       - Çift Zıplama (Double Jump)
+       - Mıknatıs (Belli bir yarıçaptaki altın ve mücevherleri otomatik çeker)
+       - Dash / Atılma Yeteneği (Engellerin üzerinden hızlıca geçmek için)
+   - Karakter Özelleştirme: Oyuncunun karakter görünümünü veya renklerini değiştirebileceği basit bir kostüm/skin seçeneği.
+
+3. Bölüm Dinamikleri & Engeller:
+   - Farklı engel tipleri: Sabit tuzaklar (dikenler, çukurlar), hareketli engeller (sallanan baltalı/bıçaklı mekanizmalar), kırılan platformlar.
+   - Rastgele/Prosedürel yerleştirilmiş altın ve mücevher dizilimleri.
+
+4. Kontroller & Kullanıcı Arayüzü (UI):
+   - Mobil dokunmatik ekranlar için ekran üzeri butonlar: Sol, Sağ, Zıpla ve Özel Yetenek (Dash/Mıknatıs).
+   - Ekran Düzenleri (Screens):
+     * Ana Menü (Oyna, Mağaza, Ayarlar)
+     * Bölüm Seçimi / İlerleme Haritası
+     * Mağaza / Geliştirme Ekranı
+     * Oyun İçi HUD (Anlık Can, Altın, Mücevher, Bölüm Sayacı)
+     * Bölüm Sonu Kaçırılma Ara Sahnesi & Skor Ekranı
+
+5. Teknik ve Mimarisi Gereksinimler:
+   - Proje Expo (React Native) yapısında oluşturulmalı.
+   - Oyun içi akıcı bir Game Loop ve doğru çalışan Çarpışma Algılama (Collision Detection) mekanizması kurgulanmalı.
+   - Veri Kaydı: Oyuncunun kazandığı altınlar, mücevherler, açtığı bölüm seviyesi ve satın aldığı geliştirmeler cihaz hafızasına (`AsyncStorage`) kaydedilmeli; uygulama kapatılıp açıldığında kaybolmamalı.
+   - Oyun içi ses ve efekt altyapısı (Zıplama, altın toplama, atlı kaçış efekti, buton tıklama) hazır bulunsun.
+   - Kod yapısı temiz, bileşenlere ayrılmış (components, screens, utils, hooks, assets) ve modüler olmalı.
+
+Lütfen ilk olarak oyunun temel kontrollerini, mağaza sistemini, bölüm sonu atlı kaçış mekaniğini ve veri kaydetme (AsyncStorage) altyapısını çalışan eksiksiz bir prototip olarak kur.
