@@ -1,0 +1,1 @@
+- [Expo preview in Replit](expo-preview-replit.md) — Disable browser auto-open; React Native DevTools may need native libraries missing from the workspace.
