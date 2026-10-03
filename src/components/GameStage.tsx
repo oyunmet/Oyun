@@ -7,6 +7,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { CastleSprite, HorseSprite, PrincessSprite } from "./GameSprites";
 import {
   createGameState,
   GameEvent,
@@ -56,7 +57,6 @@ function Character({ color, scale, left, top, invulnerable, dash }: {
 }) {
   return (
     <View
-      pointerEvents="none"
       style={[
         styles.character,
         {
@@ -66,6 +66,7 @@ function Character({ color, scale, left, top, invulnerable, dash }: {
           height: PLAYER_HEIGHT * scale,
           opacity: invulnerable ? 0.55 : 1,
           transform: [{ scaleX: dash ? 1.18 : 1 }],
+          pointerEvents: "none",
         },
       ]}
     >
@@ -84,10 +85,9 @@ function obstacleView(obstacle: Obstacle, left: number, scale: number, elapsed: 
     return (
       <View
         key={obstacle.id}
-        pointerEvents="none"
         style={[
           styles.pit,
-          { left, top: GROUND_Y * scale, width: obstacle.width * scale, height: (SCENE_HEIGHT - GROUND_Y + 8) * scale },
+          { left, top: GROUND_Y * scale, width: obstacle.width * scale, height: (SCENE_HEIGHT - GROUND_Y + 8) * scale, pointerEvents: "none" },
         ]}
       >
         <View style={[styles.pitGlow, { height: 4 * scale }]} />
@@ -96,7 +96,7 @@ function obstacleView(obstacle: Obstacle, left: number, scale: number, elapsed: 
   }
   if (obstacle.kind === "spikes") {
     return (
-      <View key={obstacle.id} pointerEvents="none" style={{ position: "absolute", left, top: (GROUND_Y - 25) * scale, flexDirection: "row" }}>
+      <View key={obstacle.id} style={{ position: "absolute", left, top: (GROUND_Y - 25) * scale, flexDirection: "row", pointerEvents: "none" }}>
         <Text style={{ fontSize: 25 * scale, lineHeight: 28 * scale, color: "#f36d64" }}>▲▲</Text>
       </View>
     );
@@ -105,10 +105,9 @@ function obstacleView(obstacle: Obstacle, left: number, scale: number, elapsed: 
     return (
       <View
         key={obstacle.id}
-        pointerEvents="none"
         style={[
           styles.crate,
-          { left, top: (GROUND_Y - 30) * scale, width: obstacle.width * scale, height: 30 * scale },
+          { left, top: (GROUND_Y - 30) * scale, width: obstacle.width * scale, height: 30 * scale, pointerEvents: "none" },
         ]}
       >
         <Text style={{ color: "#614024", fontSize: 16 * scale, fontWeight: "900" }}>╳</Text>
@@ -120,7 +119,6 @@ function obstacleView(obstacle: Obstacle, left: number, scale: number, elapsed: 
     return (
       <View
         key={obstacle.id}
-        pointerEvents="none"
         style={[
           styles.platform,
           {
@@ -129,6 +127,7 @@ function obstacleView(obstacle: Obstacle, left: number, scale: number, elapsed: 
             width: obstacle.width * scale,
             height: 9 * scale,
             opacity: obstacle.breakingFor ? 0.62 : 1,
+            pointerEvents: "none",
           },
         ]}
       />
@@ -136,7 +135,7 @@ function obstacleView(obstacle: Obstacle, left: number, scale: number, elapsed: 
   }
   const swing = Math.sin(elapsed * 4 + obstacle.x) * 30;
   return (
-    <View key={obstacle.id} pointerEvents="none" style={{ position: "absolute", left: left + obstacle.width * scale / 2 - 2 * scale, top: (GROUND_Y - 115) * scale }}>
+    <View key={obstacle.id} style={{ position: "absolute", left: left + obstacle.width * scale / 2 - 2 * scale, top: (GROUND_Y - 115) * scale, pointerEvents: "none" }}>
       <View style={[styles.chain, { height: 42 * scale }]} />
       <View style={[styles.axe, { transform: [{ rotate: `${swing}deg` }], width: 22 * scale, height: 22 * scale }]} />
     </View>
@@ -150,10 +149,9 @@ function PickupSprite({ pickup, left, scale }: { pickup: Pickup; left: number; s
   return (
     <View
       key={pickup.id}
-      pointerEvents="none"
       style={[
         styles.pickup,
-        { left: left - 9 * scale, top: (pickup.y - 9) * scale, width: 18 * scale, height: 18 * scale, borderColor: color },
+        { left: left - 9 * scale, top: (pickup.y - 9) * scale, width: 18 * scale, height: 18 * scale, borderColor: color, pointerEvents: "none" },
       ]}
     >
       <Text style={{ color, fontSize: 11 * scale, fontWeight: "900" }}>{glyph}</Text>
@@ -269,13 +267,17 @@ export default function GameStage({ level, upgrades, skin, soundOn, onExit, onCo
       <View onLayout={measureStage} style={styles.stage}>
         <View style={[styles.sky, { height: SCENE_HEIGHT * scale }]}>
           <View style={[styles.moon, { right: 39 * scale, top: 28 * scale, width: 27 * scale, height: 27 * scale }]} />
-          <View style={[styles.cloud, { left: 48 * scale, top: 62 * scale, transform: [{ scale: scale }] }]}><Text>☁</Text></View>
-          <View style={[styles.cloud, { left: 234 * scale, top: 42 * scale, transform: [{ scale: scale * 0.75 }] }]}><Text>☁</Text></View>
+          <View style={[styles.cloud, { left: 48 * scale, top: 62 * scale, transform: [{ scale: scale }] }]}>
+            <View style={styles.cloudPuffLeft} /><View style={styles.cloudPuffTop} /><View style={styles.cloudPuffRight} />
+          </View>
+          <View style={[styles.cloud, { left: 234 * scale, top: 42 * scale, transform: [{ scale: scale * 0.75 }] }]}>
+            <View style={styles.cloudPuffLeft} /><View style={styles.cloudPuffTop} /><View style={styles.cloudPuffRight} />
+          </View>
           <View style={[styles.castle, { left: (viewState.length - 104 - cameraX) * scale, top: (GROUND_Y - 70) * scale }]}>
-            <Text style={{ fontSize: 42 * scale }}>🏰</Text>
+            <CastleSprite size={58 * scale} />
           </View>
           <View style={[styles.princess, { left: (viewState.length - 58 - cameraX) * scale, top: (GROUND_Y - 39) * scale }]}>
-            <Text style={{ fontSize: 19 * scale }}>👸</Text>
+            <PrincessSprite size={24 * scale} />
           </View>
 
           <View style={[styles.ground, { top: GROUND_Y * scale, height: (SCENE_HEIGHT - GROUND_Y) * scale }]} />
@@ -294,11 +296,13 @@ export default function GameStage({ level, upgrades, skin, soundOn, onExit, onCo
             dash={viewState.dashTime > 0}
           />
           {cinematic && (
-            <View pointerEvents="none" style={styles.cinematicCover}>
+            <View style={styles.cinematicCover}>
               <Text style={styles.cinematicTitle}>ATLI PRENSESİ KAÇIRDI!</Text>
               <Animated.View style={[styles.horse, { transform: [{ translateX: horseX }] }]}>
-                <Text style={{ fontSize: 45 * scale }}>🐎</Text>
-                <Text style={styles.dust}>〰️ 〰️</Text>
+                <HorseSprite size={54 * scale} />
+                <View style={styles.dustPuffs}>
+                  <View style={styles.dustPuff} /><View style={styles.dustPuff} /><View style={styles.dustPuff} />
+                </View>
               </Animated.View>
             </View>
           )}
@@ -347,7 +351,7 @@ export default function GameStage({ level, upgrades, skin, soundOn, onExit, onCo
             style={({ pressed }) => [styles.dashButton, pressed && styles.controlPressed, !upgrades.dash && styles.lockedButton]}
             accessibilityLabel={upgrades.dash ? "Atıl" : "Atılma kilitli"}
           >
-            <Text style={styles.actionGlyph}>{upgrades.dash ? "⚡" : "🔒"}</Text>
+            <Text style={styles.actionGlyph}>{upgrades.dash ? "➤" : "·"}</Text>
             <Text style={styles.actionLabel}>{upgrades.dash ? "ATIL" : "KİLİTLİ"}</Text>
           </Pressable>
         </View>
@@ -360,25 +364,28 @@ export default function GameStage({ level, upgrades, skin, soundOn, onExit, onCo
 const styles = StyleSheet.create({
   gamePage: { flex: 1, width: "100%", maxWidth: 560, alignSelf: "center", justifyContent: "center", paddingHorizontal: 14, paddingBottom: 12 },
   gameTop: { height: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  leaveButton: { paddingVertical: 10, paddingHorizontal: 12, backgroundColor: "#182940", borderRadius: 12, borderWidth: 1, borderColor: "#314760" },
+  leaveButton: { paddingVertical: 10, paddingHorizontal: 12, backgroundColor: "#202c3d", borderRadius: 12, borderWidth: 1, borderColor: "#514b43" },
   leaveText: { color: "#dbe8f5", fontWeight: "900", fontSize: 11, letterSpacing: 0.4 },
-  levelLabel: { color: "#f8d36a", fontWeight: "900", fontSize: 12, letterSpacing: 1.3 },
+  levelLabel: { color: "#e7c77f", fontWeight: "900", fontSize: 12, letterSpacing: 1.3 },
   miniCurrency: { flexDirection: "row", gap: 9, alignItems: "center" },
   miniGold: { color: "#ffd75e", fontWeight: "900", fontSize: 12 },
   miniGem: { color: "#7ee7ed", fontWeight: "900", fontSize: 12 },
-  stage: { width: "100%", maxWidth: 520, alignSelf: "center", aspectRatio: SCENE_WIDTH / SCENE_HEIGHT, borderWidth: 2, borderRadius: 16, borderColor: "#48617b", overflow: "hidden", backgroundColor: "#101f32" },
-  sky: { width: "100%", backgroundColor: "#192b44", overflow: "hidden" },
-  moon: { position: "absolute", borderRadius: 99, backgroundColor: "#f6d989" },
-  cloud: { position: "absolute" },
+  stage: { width: "100%", maxWidth: 520, alignSelf: "center", aspectRatio: SCENE_WIDTH / SCENE_HEIGHT, borderWidth: 2, borderRadius: 18, borderColor: "#9b805e", overflow: "hidden", backgroundColor: "#182638" },
+  sky: { width: "100%", backgroundColor: "#243446", overflow: "hidden" },
+  moon: { position: "absolute", borderRadius: 99, backgroundColor: "#f1d799", elevation: 3 },
+  cloud: { position: "absolute", width: 42, height: 17 },
+  cloudPuffLeft: { position: "absolute", left: 3, bottom: 0, width: 21, height: 11, borderRadius: 99, backgroundColor: "rgba(236,223,196,0.5)" },
+  cloudPuffTop: { position: "absolute", left: 13, top: 0, width: 17, height: 15, borderRadius: 99, backgroundColor: "rgba(236,223,196,0.58)" },
+  cloudPuffRight: { position: "absolute", right: 2, bottom: 0, width: 20, height: 10, borderRadius: 99, backgroundColor: "rgba(236,223,196,0.48)" },
   castle: { position: "absolute" },
   princess: { position: "absolute" },
-  ground: { position: "absolute", left: 0, right: 0, backgroundColor: "#324f4a", borderTopWidth: 5, borderTopColor: "#8ebf74" },
+  ground: { position: "absolute", left: 0, right: 0, backgroundColor: "#354e47", borderTopWidth: 5, borderTopColor: "#b3a06c" },
   pit: { position: "absolute", backgroundColor: "#09111c", borderLeftWidth: 2, borderRightWidth: 2, borderColor: "#141b27" },
   pitGlow: { backgroundColor: "#d15b47" },
-  crate: { position: "absolute", alignItems: "center", justifyContent: "center", backgroundColor: "#a77849", borderWidth: 3, borderColor: "#6c4a2d", borderRadius: 4 },
-  platform: { position: "absolute", backgroundColor: "#a77d51", borderTopWidth: 3, borderColor: "#e9bf6d", borderRadius: 4 },
-  chain: { width: 3, alignSelf: "center", backgroundColor: "#909ba6" },
-  axe: { backgroundColor: "#c6d1d8", borderRadius: 3, borderWidth: 3, borderColor: "#76818a", marginLeft: -10 },
+  crate: { position: "absolute", alignItems: "center", justifyContent: "center", backgroundColor: "#927052", borderWidth: 3, borderColor: "#57423b", borderRadius: 5 },
+  platform: { position: "absolute", backgroundColor: "#88714f", borderTopWidth: 3, borderColor: "#d7b876", borderRadius: 4 },
+  chain: { width: 3, alignSelf: "center", backgroundColor: "#afa58f" },
+  axe: { backgroundColor: "#c6c9bf", borderRadius: 3, borderWidth: 3, borderColor: "#727c7c", marginLeft: -10 },
   pickup: { position: "absolute", borderWidth: 2, borderRadius: 99, backgroundColor: "#18283d", alignItems: "center", justifyContent: "center" },
   character: { position: "absolute", zIndex: 4 },
   helmet: { position: "absolute", left: 3, right: 3, top: 0, borderTopLeftRadius: 8, borderTopRightRadius: 8, borderWidth: 1, borderColor: "#c7e6ff" },
@@ -386,25 +393,26 @@ const styles = StyleSheet.create({
   torso: { position: "absolute", borderRadius: 3, borderWidth: 1, borderColor: "#c7e6ff" },
   boot: { position: "absolute", width: 9, height: 6, backgroundColor: "#f0c078", borderRadius: 2 },
   sword: { position: "absolute", backgroundColor: "#e4f6ff", borderRadius: 2, transform: [{ rotate: "24deg" }] },
-  cinematicCover: { ...StyleSheet.absoluteFill, backgroundColor: "rgba(10,16,28,0.42)", alignItems: "center", justifyContent: "center", zIndex: 8 },
-  cinematicTitle: { color: "#fff1bd", fontSize: 17, fontWeight: "900", letterSpacing: 1, marginBottom: 35 },
+  cinematicCover: { ...StyleSheet.absoluteFill, backgroundColor: "rgba(10,16,28,0.48)", alignItems: "center", justifyContent: "center", zIndex: 8 },
+  cinematicTitle: { color: "#fff0c8", fontFamily: "serif", fontSize: 17, fontWeight: "700", letterSpacing: 1, marginBottom: 35 },
   horse: { position: "absolute", top: "52%", left: 0, alignItems: "center", flexDirection: "row" },
-  dust: { fontSize: 19, marginLeft: 6, color: "#f2d0a5" },
+  dustPuffs: { flexDirection: "row", alignItems: "center", gap: 4, marginLeft: 5, marginTop: 20 },
+  dustPuff: { width: 10, height: 5, borderRadius: 99, backgroundColor: "rgba(240,216,177,0.68)" },
   hud: { position: "absolute", flexDirection: "row", alignItems: "center", gap: 10, zIndex: 6 },
   hpPill: { backgroundColor: "rgba(9,18,31,0.78)", paddingVertical: 5, paddingHorizontal: 9, borderRadius: 99, borderWidth: 1, borderColor: "#65778a" },
   hpText: { color: "#ff8990", fontSize: 11, fontWeight: "900" },
   progressTrack: { flex: 1, height: 7, borderRadius: 99, backgroundColor: "rgba(10,19,32,0.78)", overflow: "hidden" },
-  progressFill: { height: "100%", borderRadius: 99, backgroundColor: "#f6c75d" },
+  progressFill: { height: "100%", borderRadius: 99, backgroundColor: "#d9b46f" },
   controlRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: 16, gap: 14 },
   directionGroup: { flexDirection: "row", gap: 10 },
   actionGroup: { flexDirection: "row", gap: 10 },
-  controlButton: { width: 58, height: 58, borderRadius: 17, backgroundColor: "#1b3048", borderWidth: 1, borderColor: "#4d6885", alignItems: "center", justifyContent: "center" },
+  controlButton: { width: 58, height: 58, borderRadius: 17, backgroundColor: "#263649", borderWidth: 1, borderColor: "#776850", alignItems: "center", justifyContent: "center" },
   controlPressed: { opacity: 0.74, transform: [{ scale: 0.96 }] },
-  controlGlyph: { fontSize: 22, color: "#edf4ff", fontWeight: "900" },
-  jumpButton: { width: 68, height: 62, borderRadius: 17, backgroundColor: "#c59042", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#f4d17c" },
-  dashButton: { width: 68, height: 62, borderRadius: 17, backgroundColor: "#315e7a", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#77b6cf" },
-  lockedButton: { backgroundColor: "#293646", borderColor: "#465361" },
-  actionGlyph: { fontSize: 21, color: "#fff6de", fontWeight: "900", lineHeight: 23 },
-  actionLabel: { fontSize: 8, color: "#fff6de", fontWeight: "900", letterSpacing: 0.6 },
-  controlHint: { color: "#8fa2b8", fontSize: 10, textAlign: "center", marginTop: 10 },
+  controlGlyph: { fontSize: 22, color: "#f1e6d3", fontWeight: "900" },
+  jumpButton: { width: 68, height: 62, borderRadius: 17, backgroundColor: "#b87950", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#e2c17f" },
+  dashButton: { width: 68, height: 62, borderRadius: 17, backgroundColor: "#385966", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#7caaa9" },
+  lockedButton: { backgroundColor: "#333d4a", borderColor: "#62645e" },
+  actionGlyph: { fontSize: 21, color: "#fff2d8", fontWeight: "900", lineHeight: 23 },
+  actionLabel: { fontSize: 8, color: "#fff2d8", fontWeight: "900", letterSpacing: 0.6 },
+  controlHint: { color: "#a4a8ad", fontSize: 10, textAlign: "center", marginTop: 10 },
 });

@@ -1,1 +1,2 @@
 - [Expo preview in Replit](expo-preview-replit.md) — Disable browser auto-open; React Native DevTools may need native libraries missing from the workspace.
+- [Saraya visual refresh scope](saraya-visual-refresh.md) — Keep visual polish separate from gameplay mechanics and saved player progress.

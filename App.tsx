@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import GameStage from "./src/components/GameStage";
+import RoyalStoryArt from "./src/components/RoyalStoryArt";
 import { playSound, prepareAudio } from "./src/audio/sounds";
 import ShopScreen from "./src/screens/ShopScreen";
 import {
@@ -206,17 +207,20 @@ export default function App() {
             </View>
             <View style={styles.hero}>
               <Text style={styles.heroEyebrow}>BİR SONRAKİ BÖLÜM HİÇBİTMİYOR</Text>
-              <Text style={styles.heroTitle}>SARAYA{"\n"}YOLCULUK</Text>
+              <Text style={styles.heroTitle}>SARAYA{"\n"}<Text style={styles.heroTitleEm}>YOLCULUK</Text></Text>
               <Text style={styles.heroCopy}>Tuzakları aş. Altınları topla.{"\n"}Sarayın yolunu bul.</Text>
               <View style={styles.heroArt}>
-                <View style={styles.starA}><Text style={styles.starText}>✦</Text></View>
-                <View style={styles.starB}><Text style={styles.starText}>✧</Text></View>
-                <View style={styles.heroCastle}><Text style={styles.castleEmoji}>🏰</Text></View>
-                <View style={[styles.heroKnight, { backgroundColor: SKIN_SWATCHES[profile.skin] }]}>
-                  <Text style={styles.knightFace}>•ᴗ•</Text>
+                <RoyalStoryArt knightColor={SKIN_SWATCHES[profile.skin] ?? SKIN_SWATCHES[0]} />
+                <View style={styles.heroArtFrame} />
+                <View style={styles.heroArtCaption}>
+                  <Text style={styles.heroArtCaptionText}>MASAL KİTABI · I</Text>
+                  <Text style={styles.heroArtCaptionText}>GECE YOLU</Text>
                 </View>
-                <View style={styles.heroGround} />
-                <View style={styles.heroSign}><Text style={styles.heroSignText}>BÖLÜM {profile.unlockedLevel} · DEVAM ET</Text></View>
+              </View>
+              <View style={styles.chapterRow}>
+                <Text style={styles.chapterLabel}>ŞİMDİKİ SAYFA</Text>
+                <View style={styles.chapterRule} />
+                <Text style={styles.chapterNumber}>BÖLÜM {profile.unlockedLevel}</Text>
               </View>
             </View>
             <View style={styles.walletRow}>
@@ -264,7 +268,7 @@ export default function App() {
                   style={[styles.levelCard, selected && styles.selectedLevelCard, !unlocked && styles.lockedLevelCard]}
                 >
                   <View style={[styles.levelNumber, unlocked && styles.levelNumberOpen]}>
-                    <Text style={styles.levelNumberText}>{unlocked ? String(level).padStart(2, "0") : "🔒"}</Text>
+                    <Text style={styles.levelNumberText}>{unlocked ? String(level).padStart(2, "0") : "×"}</Text>
                   </View>
                   <View style={styles.levelInfo}>
                     <Text style={styles.levelTitle}>{unlocked ? `Bölüm ${level}` : "Henüz kilitli"}</Text>
@@ -408,100 +412,98 @@ function ResultScreen({ complete, level, rewards, nextLevel, onNext, onMenu, onS
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#0b1624", alignItems: "stretch" },
+  root: { flex: 1, backgroundColor: "#0b1422", alignItems: "stretch" },
   loading: { flex: 1, justifyContent: "center", alignItems: "center" },
   brandMark: { color: "#f3cc6b", fontSize: 36 },
   loadingText: { color: "#9eafc1", fontSize: 10, fontWeight: "900", letterSpacing: 2, marginTop: 12 },
   storageBanner: { margin: 8, paddingVertical: 9, paddingHorizontal: 12, borderRadius: 10, backgroundColor: "#593f29", flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   storageBannerText: { flex: 1, color: "#fff0d1", fontSize: 11, fontWeight: "700" },
   dismiss: { color: "#fff0d1", fontSize: 20, paddingHorizontal: 6 },
-  menuScroll: { flexGrow: 1, justifyContent: "center", paddingVertical: 8 },
-  menu: { width: "100%", maxWidth: 540, alignSelf: "center", paddingHorizontal: 20, paddingBottom: 12 },
-  topline: { height: 40, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  brandChip: { flexDirection: "row", gap: 7, alignItems: "center", borderRadius: 99, paddingVertical: 7, paddingHorizontal: 11, backgroundColor: "#15263a", borderWidth: 1, borderColor: "#2f465e" },
-  brandIcon: { color: "#f0cb71", fontSize: 13 },
-  brandText: { color: "#aebfd0", fontSize: 8, fontWeight: "900", letterSpacing: 1.15 },
-  settingsIcon: { width: 34, height: 34, alignItems: "center", justifyContent: "center", borderRadius: 11, backgroundColor: "#15263a", borderWidth: 1, borderColor: "#2f465e" },
-  settingsIconText: { color: "#c6d2de", fontSize: 16 },
-  hero: { marginTop: 15, paddingHorizontal: 2 },
-  heroEyebrow: { color: "#eac767", fontWeight: "900", fontSize: 8, letterSpacing: 2 },
-  heroTitle: { color: "#f4efe4", fontWeight: "900", fontSize: 42, lineHeight: 42, letterSpacing: 1.3, marginTop: 7 },
-  heroCopy: { color: "#9fb0c1", fontSize: 13, lineHeight: 19, marginTop: 7 },
-  heroArt: { height: 135, marginTop: 12, borderRadius: 17, backgroundColor: "#152941", borderWidth: 1, borderColor: "#304a65", overflow: "hidden" },
-  starA: { position: "absolute", top: 18, left: 37 },
-  starB: { position: "absolute", top: 45, right: 115 },
-  starText: { color: "#e4c878", fontSize: 15 },
-  heroCastle: { position: "absolute", right: 35, top: 19 },
-  castleEmoji: { fontSize: 59 },
-  heroKnight: { position: "absolute", left: 83, top: 55, width: 30, height: 39, borderRadius: 7, borderWidth: 2, borderColor: "#d5eaff", alignItems: "center", justifyContent: "center" },
-  knightFace: { color: "#ffdda8", fontSize: 9, fontWeight: "900" },
-  heroGround: { position: "absolute", bottom: 0, left: 0, right: 0, height: 21, backgroundColor: "#33544a", borderTopWidth: 3, borderTopColor: "#8db574" },
-  heroSign: { position: "absolute", left: 17, bottom: 29, paddingHorizontal: 9, paddingVertical: 5, borderRadius: 6, backgroundColor: "#263d56" },
-  heroSignText: { fontSize: 7, color: "#becbd8", fontWeight: "900", letterSpacing: 1 },
-  walletRow: { flexDirection: "row", gap: 8, marginTop: 12 },
-  walletCard: { flex: 1, minHeight: 53, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 13, backgroundColor: "#122237", borderWidth: 1, borderColor: "#263c55" },
+  menuScroll: { flexGrow: 1, justifyContent: "flex-start", paddingVertical: 10 },
+  menu: { width: "100%", maxWidth: 540, alignSelf: "center", flexGrow: 1, paddingHorizontal: 20, paddingBottom: 14 },
+  topline: { height: 42, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  brandChip: { flexDirection: "row", gap: 7, alignItems: "center", borderRadius: 99, paddingVertical: 7, paddingHorizontal: 11, backgroundColor: "#1b2939", borderWidth: 1, borderColor: "#665442" },
+  brandIcon: { color: "#e6c47e", fontSize: 13 },
+  brandText: { color: "#c7c0b7", fontSize: 8, fontWeight: "900", letterSpacing: 1.15 },
+  settingsIcon: { width: 36, height: 36, alignItems: "center", justifyContent: "center", borderRadius: 12, backgroundColor: "#1b2939", borderWidth: 1, borderColor: "#665442" },
+  settingsIconText: { color: "#e4d5ba", fontSize: 16 },
+  hero: { marginTop: 14, paddingHorizontal: 2 },
+  heroEyebrow: { color: "#e2bd78", fontWeight: "900", fontSize: 8, letterSpacing: 2 },
+  heroTitle: { color: "#f5ead7", fontFamily: "serif", fontWeight: "700", fontSize: 42, lineHeight: 43, letterSpacing: 0.7, marginTop: 7 },
+  heroTitleEm: { color: "#d5bd8d", fontFamily: "serif", fontWeight: "600", fontSize: 38, fontStyle: "italic", letterSpacing: 1.4 },
+  heroCopy: { color: "#b5b7be", fontSize: 13, lineHeight: 19, marginTop: 7 },
+  heroArt: { height: 210, marginTop: 13, borderRadius: 20, backgroundColor: "#172638", borderWidth: 1, borderColor: "#9a7957", overflow: "hidden", elevation: 5 },
+  heroArtFrame: { ...StyleSheet.absoluteFill, margin: 5, borderRadius: 15, borderWidth: 1, borderColor: "rgba(245,224,184,0.22)", pointerEvents: "none" },
+  heroArtCaption: { position: "absolute", left: 12, right: 12, bottom: 11, flexDirection: "row", justifyContent: "space-between" },
+  heroArtCaptionText: { color: "rgba(248,232,205,0.76)", fontSize: 6, fontWeight: "900", letterSpacing: 0.8 },
+  chapterRow: { flexDirection: "row", alignItems: "center", gap: 9, marginTop: 10, marginBottom: 9, paddingHorizontal: 2 },
+  chapterLabel: { color: "#888f89", fontSize: 7, fontWeight: "900", letterSpacing: 1.25 },
+  chapterRule: { width: 19, height: 1, backgroundColor: "rgba(195,170,116,0.55)" },
+  chapterNumber: { color: "#d2bc8b", fontSize: 8, fontWeight: "900", letterSpacing: 1 },
+  walletRow: { flexDirection: "row", gap: 7, marginTop: 11 },
+  walletCard: { flex: 1, minHeight: 54, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 14, backgroundColor: "#1a293a", borderWidth: 1, borderColor: "#4d4a43" },
   walletIconGold: { color: "#ffd75e", fontSize: 17 },
   walletIconGem: { color: "#78dfea", fontSize: 17 },
-  walletIconLevel: { color: "#d0aaff", fontSize: 16 },
+  walletIconLevel: { color: "#d4c08c", fontSize: 16 },
   walletNumber: { color: "#f1f4f6", fontSize: 15, fontWeight: "900" },
-  walletLabel: { color: "#71879e", fontSize: 7, fontWeight: "900", letterSpacing: 0.8, marginTop: 1 },
-  primaryButton: { minHeight: 52, marginTop: 13, paddingHorizontal: 17, borderRadius: 13, backgroundColor: "#ba8842", borderWidth: 1, borderColor: "#e8be68", flexDirection: "row", alignItems: "center", justifyContent: "center" },
-  primaryButtonText: { color: "#fff6e3", fontSize: 11, fontWeight: "900", letterSpacing: 1.1 },
+  walletLabel: { color: "#a39c91", fontSize: 7, fontWeight: "900", letterSpacing: 0.8, marginTop: 1 },
+  primaryButton: { minHeight: 53, marginTop: 12, paddingHorizontal: 17, borderRadius: 15, backgroundColor: "#b87950", borderWidth: 1, borderColor: "#e2c17f", flexDirection: "row", alignItems: "center", justifyContent: "center", elevation: 3 },
+  primaryButtonText: { color: "#fff3dd", fontSize: 11, fontWeight: "900", letterSpacing: 1.1 },
   primaryArrow: { position: "absolute", right: 17, color: "#fff2d7", fontSize: 20, fontWeight: "700" },
   pressed: { opacity: 0.78, transform: [{ scale: 0.99 }] },
-  secondaryRow: { flexDirection: "row", gap: 9, marginTop: 9 },
-  menuTile: { flex: 1, height: 49, flexDirection: "row", alignItems: "center", paddingHorizontal: 12, gap: 9, borderRadius: 12, backgroundColor: "#15263a", borderWidth: 1, borderColor: "#30465e" },
-  menuTileIcon: { color: "#d0b36a", fontSize: 18 },
-  menuTileLabel: { color: "#d6e0e9", fontSize: 9, fontWeight: "900", letterSpacing: 0.8 },
-  menuTileArrow: { marginLeft: "auto", color: "#71879e", fontSize: 14 },
-  tip: { flexDirection: "row", gap: 8, alignItems: "center", paddingHorizontal: 12, paddingVertical: 10, marginTop: 13, borderRadius: 11, backgroundColor: "#18283a" },
-  tipIcon: { color: "#f1ce78", fontSize: 13 },
-  tipText: { flex: 1, color: "#9daebe", fontSize: 8, fontWeight: "800", letterSpacing: 0.5, lineHeight: 13 },
-  footer: { color: "#52667b", fontSize: 7, fontWeight: "900", letterSpacing: 1.6, textAlign: "center", marginTop: 13 },
+  secondaryRow: { flexDirection: "row", gap: 8, marginTop: 8 },
+  menuTile: { flex: 1, height: 48, flexDirection: "row", alignItems: "center", paddingHorizontal: 11, gap: 8, borderRadius: 13, backgroundColor: "#1b2a3b", borderWidth: 1, borderColor: "#4a4a46" },
+  menuTileIcon: { color: "#d8bb82", fontSize: 18 },
+  menuTileLabel: { color: "#e2dccf", fontSize: 9, fontWeight: "900", letterSpacing: 0.8 },
+  menuTileArrow: { marginLeft: "auto", color: "#9b958b", fontSize: 14 },
+  tip: { flexDirection: "row", gap: 8, alignItems: "center", paddingHorizontal: 12, paddingVertical: 10, marginTop: 10, borderRadius: 12, backgroundColor: "#202d36", borderWidth: 1, borderColor: "#414b4a" },
+  tipIcon: { color: "#e7ca8c", fontSize: 13 },
+  tipText: { flex: 1, color: "#c0bdba", fontSize: 8, fontWeight: "800", letterSpacing: 0.4, lineHeight: 13 },
+  footer: { color: "#777f87", fontSize: 7, fontWeight: "900", letterSpacing: 1.6, textAlign: "center", marginTop: "auto", paddingTop: 12 },
   subScreen: { flex: 1, width: "100%", maxWidth: 620, alignSelf: "center" },
   subHeader: { alignItems: "center", paddingTop: 20, paddingBottom: 12 },
-  subBack: { position: "absolute", left: 16, top: 19, backgroundColor: "#182940", borderRadius: 10, paddingVertical: 8, paddingHorizontal: 11 },
+  subBack: { position: "absolute", left: 16, top: 19, backgroundColor: "#202c3d", borderRadius: 11, paddingVertical: 8, paddingHorizontal: 11, borderWidth: 1, borderColor: "#514b43" },
   subBackText: { color: "#d8e5f2", fontSize: 10, fontWeight: "900" },
-  subEyebrow: { color: "#eac767", fontSize: 9, fontWeight: "900", letterSpacing: 2 },
-  subTitle: { color: "#f4efe4", fontSize: 27, fontWeight: "900", marginTop: 3 },
-  mapIntro: { marginHorizontal: 17, padding: 15, borderRadius: 14, backgroundColor: "#14253a", borderWidth: 1, borderColor: "#2d435c" },
-  mapIntroTitle: { color: "#f0cc75", fontSize: 13, fontWeight: "900" },
-  mapIntroCopy: { color: "#9aacc0", fontSize: 10, lineHeight: 15, marginTop: 4 },
+  subEyebrow: { color: "#dabb7a", fontSize: 9, fontWeight: "900", letterSpacing: 2 },
+  subTitle: { color: "#f5ead7", fontFamily: "serif", fontSize: 28, fontWeight: "700", marginTop: 3 },
+  mapIntro: { marginHorizontal: 17, padding: 15, borderRadius: 15, backgroundColor: "#1d2b3c", borderWidth: 1, borderColor: "#625342" },
+  mapIntroTitle: { color: "#e8c984", fontSize: 13, fontWeight: "900" },
+  mapIntroCopy: { color: "#b0b4bc", fontSize: 10, lineHeight: 15, marginTop: 4 },
   levelList: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 25, gap: 8 },
-  levelCard: { minHeight: 66, padding: 10, borderRadius: 13, flexDirection: "row", alignItems: "center", gap: 11, backgroundColor: "#14253a", borderWidth: 1, borderColor: "#2a4059" },
-  selectedLevelCard: { borderColor: "#e2b958", backgroundColor: "#1e3043" },
+  levelCard: { minHeight: 66, padding: 10, borderRadius: 14, flexDirection: "row", alignItems: "center", gap: 11, backgroundColor: "#1d2a3a", borderWidth: 1, borderColor: "#474b4a" },
+  selectedLevelCard: { borderColor: "#d9b772", backgroundColor: "#293648" },
   lockedLevelCard: { opacity: 0.5 },
-  levelNumber: { width: 39, height: 39, borderRadius: 12, backgroundColor: "#2a3a4d", alignItems: "center", justifyContent: "center" },
-  levelNumberOpen: { backgroundColor: "#36536a" },
-  levelNumberText: { color: "#e3c36b", fontSize: 12, fontWeight: "900" },
+  levelNumber: { width: 39, height: 39, borderRadius: 12, backgroundColor: "#3a424d", alignItems: "center", justifyContent: "center" },
+  levelNumberOpen: { backgroundColor: "#4b4b47" },
+  levelNumberText: { color: "#e3c88c", fontSize: 12, fontWeight: "900" },
   levelInfo: { flex: 1 },
   levelTitle: { color: "#eaf0f5", fontSize: 12, fontWeight: "900" },
   levelDescription: { color: "#8fa2b8", fontSize: 9, marginTop: 3 },
-  levelStatus: { color: "#90a3b7", fontSize: 7, fontWeight: "900", letterSpacing: 0.7 },
+  levelStatus: { color: "#b5aa96", fontSize: 7, fontWeight: "900", letterSpacing: 0.7 },
   mapStartButton: { marginTop: 5 },
-  settingsCard: { marginHorizontal: 16, marginTop: 15, padding: 15, backgroundColor: "#14253a", borderWidth: 1, borderColor: "#2d435c", borderRadius: 15 },
+  settingsCard: { marginHorizontal: 16, marginTop: 15, padding: 15, backgroundColor: "#1d2b3c", borderWidth: 1, borderColor: "#514c44", borderRadius: 16 },
   settingRow: { flexDirection: "row", alignItems: "center", gap: 11 },
-  settingIcon: { width: 38, height: 38, backgroundColor: "#2a4059", borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  settingIcon: { width: 38, height: 38, backgroundColor: "#394453", borderRadius: 12, alignItems: "center", justifyContent: "center" },
   settingTextWrap: { flex: 1 },
-  settingTitle: { color: "#edf2f7", fontSize: 13, fontWeight: "900" },
-  settingDescription: { color: "#94a8bb", fontSize: 9, lineHeight: 14, marginTop: 4 },
-  settingsNote: { marginHorizontal: 16, marginTop: 12, padding: 14, borderRadius: 13, backgroundColor: "#17283c" },
-  settingsNoteTitle: { color: "#e6c46c", fontWeight: "900", fontSize: 11 },
-  settingsNoteBody: { color: "#9aacc0", fontSize: 10, lineHeight: 16, marginTop: 5 },
-  secondaryWide: { marginHorizontal: 16, marginTop: 12, paddingVertical: 14, borderRadius: 12, alignItems: "center", backgroundColor: "#1d3046", borderWidth: 1, borderColor: "#3c536c" },
-  secondaryWideText: { color: "#dce6ef", fontSize: 10, fontWeight: "900", letterSpacing: 0.9 },
+  settingTitle: { color: "#f1e9dc", fontSize: 13, fontWeight: "900" },
+  settingDescription: { color: "#adb4bd", fontSize: 9, lineHeight: 14, marginTop: 4 },
+  settingsNote: { marginHorizontal: 16, marginTop: 12, padding: 14, borderRadius: 14, backgroundColor: "#202d39", borderWidth: 1, borderColor: "#414b4a" },
+  settingsNoteTitle: { color: "#e2c483", fontWeight: "900", fontSize: 11 },
+  settingsNoteBody: { color: "#b1b5bb", fontSize: 10, lineHeight: 16, marginTop: 5 },
+  secondaryWide: { marginHorizontal: 16, marginTop: 12, paddingVertical: 14, borderRadius: 13, alignItems: "center", backgroundColor: "#202d3e", borderWidth: 1, borderColor: "#655844" },
+  secondaryWideText: { color: "#e7decf", fontSize: 10, fontWeight: "900", letterSpacing: 0.9 },
   resultScroll: { flexGrow: 1, justifyContent: "center", paddingHorizontal: 20, paddingVertical: 24 },
   result: { width: "100%", maxWidth: 480, alignSelf: "center", alignItems: "center" },
-  resultMedallion: { width: 64, height: 64, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: "#3b4d40", borderWidth: 1, borderColor: "#95bd79" },
-  failMedallion: { backgroundColor: "#4b3339", borderColor: "#bd6b70" },
-  resultMedallionText: { color: "#f1d27e", fontSize: 31, fontWeight: "900" },
-  resultEyebrow: { color: "#e5c46e", fontSize: 9, letterSpacing: 2.2, fontWeight: "900", marginTop: 16 },
-  resultTitle: { color: "#f4efe4", fontSize: 26, fontWeight: "900", marginTop: 4, textAlign: "center" },
-  resultBody: { color: "#9aabbd", fontSize: 12, lineHeight: 19, textAlign: "center", maxWidth: 340, marginTop: 7 },
-  resultCard: { width: "100%", maxWidth: 380, marginTop: 18, borderRadius: 16, backgroundColor: "#14253a", borderWidth: 1, borderColor: "#30475f", padding: 15 },
+  resultMedallion: { width: 64, height: 64, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: "#3c5146", borderWidth: 1, borderColor: "#b3aa79" },
+  failMedallion: { backgroundColor: "#51404a", borderColor: "#bc7770" },
+  resultMedallionText: { color: "#f0d394", fontSize: 31, fontWeight: "900" },
+  resultEyebrow: { color: "#dfbd79", fontSize: 9, letterSpacing: 2.2, fontWeight: "900", marginTop: 16 },
+  resultTitle: { color: "#f5ead7", fontFamily: "serif", fontSize: 27, fontWeight: "700", marginTop: 4, textAlign: "center" },
+  resultBody: { color: "#b0b4bc", fontSize: 12, lineHeight: 19, textAlign: "center", maxWidth: 340, marginTop: 7 },
+  resultCard: { width: "100%", maxWidth: 380, marginTop: 18, borderRadius: 17, backgroundColor: "#1d2b3c", borderWidth: 1, borderColor: "#554e44", padding: 15 },
   resultCardTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   resultCardLabel: { color: "#90a3b7", fontSize: 9, fontWeight: "900", letterSpacing: 1 },
-  resultRank: { color: "#f4d074", fontSize: 13, fontWeight: "900" },
+  resultRank: { color: "#e7c77f", fontSize: 13, fontWeight: "900" },
   rewardRow: { flexDirection: "row", alignItems: "center", marginTop: 15 },
   rewardBox: { flex: 1, alignItems: "center" },
   rewardValue: { color: "#f3f3ed", fontSize: 21, fontWeight: "900" },
@@ -509,8 +511,8 @@ const styles = StyleSheet.create({
   rewardDivider: { width: 1, height: 34, backgroundColor: "#344a60" },
   unlockText: { color: "#a8d29d", fontSize: 9, textAlign: "center", fontWeight: "900", letterSpacing: 1, marginTop: 15 },
   resultLinks: { flexDirection: "row", gap: 10, marginTop: 9 },
-  secondaryButton: { minWidth: 125, paddingVertical: 13, paddingHorizontal: 15, borderRadius: 12, backgroundColor: "#182b41", borderWidth: 1, borderColor: "#3b526b", alignItems: "center" },
-  secondaryButtonText: { color: "#cbd7e2", fontSize: 9, fontWeight: "900", letterSpacing: 0.8 },
-  toast: { position: "absolute", bottom: 22, left: 18, right: 18, alignSelf: "center", maxWidth: 440, backgroundColor: "#e8c36c", borderRadius: 12, paddingVertical: 11, paddingHorizontal: 15, zIndex: 30 },
-  toastText: { color: "#312817", textAlign: "center", fontWeight: "900", fontSize: 11 },
+  secondaryButton: { minWidth: 125, paddingVertical: 13, paddingHorizontal: 15, borderRadius: 13, backgroundColor: "#202d3e", borderWidth: 1, borderColor: "#514d46", alignItems: "center" },
+  secondaryButtonText: { color: "#e4ded4", fontSize: 9, fontWeight: "900", letterSpacing: 0.8 },
+  toast: { position: "absolute", bottom: 22, left: 18, right: 18, alignSelf: "center", maxWidth: 440, backgroundColor: "#e2c17f", borderRadius: 13, paddingVertical: 11, paddingHorizontal: 15, zIndex: 30, elevation: 4 },
+  toastText: { color: "#34291d", textAlign: "center", fontWeight: "900", fontSize: 11 },
 });
