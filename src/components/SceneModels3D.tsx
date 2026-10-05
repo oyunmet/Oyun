@@ -3,6 +3,8 @@ import { useFrame } from "@react-three/fiber";
 import { Group, Quaternion, Vector3 } from "three";
 import { getVehicleModelSpec } from "../game/vehicles";
 import type { CharacterId, VehicleId, VehicleModelId } from "../storage/profile";
+import RoyalCar3D from "./RoyalCar3D";
+import RoyalRider3D from "./RoyalRider3D";
 
 type VehicleProps = {
   vehicle: VehicleId;
@@ -88,87 +90,6 @@ function Wheel3D({
   );
 }
 
-function Rider3D({
-  character,
-  vehicle,
-  riderColor,
-}: Pick<VehicleProps, "character" | "vehicle" | "riderColor">) {
-  const outfit = character === "ranger" ? "#376b4d" : character === "guardian" ? "#75445f" : "#284269";
-  const armor = "#d9c9a5";
-  const car = vehicle === "car";
-  const z = car ? 15 : 8;
-  const hip: [number, number, number] = car ? [-3, 38, z] : [-6, 39, z];
-  const shoulder: [number, number, number] = car ? [3, 52, z] : [5, 56, z];
-  const head: [number, number, number] = car ? [7, 66, z] : [14, 71, z];
-  const hand: [number, number, number] = car ? [22, 43, z + 1] : [29, 47, z + 1];
-  const knee: [number, number, number] = car ? [9, 28, z] : [11, 25, z];
-  const boot: [number, number, number] = car ? [21, 27, z + 1] : [24, 18, z + 1];
-
-  return (
-    <group>
-      <mesh position={[hip[0] - 12, hip[1] + 6, z - 2]} rotation={[0, 0, -0.55]} castShadow>
-        <boxGeometry args={[25, 17, 2.6]} />
-        <meshStandardMaterial color={outfit} roughness={0.42} />
-      </mesh>
-      <mesh position={hip} rotation={[0, 0, -0.38]} castShadow>
-        <capsuleGeometry args={[7, 15, 4, 8]} />
-        <meshStandardMaterial color={armor} metalness={0.48} roughness={0.28} />
-      </mesh>
-      <mesh position={shoulder} rotation={[0, 0, -0.38]} castShadow>
-        <capsuleGeometry args={[8, 13, 4, 9]} />
-        <meshStandardMaterial color={riderColor || outfit} metalness={0.28} roughness={0.32} />
-      </mesh>
-      <mesh position={head} castShadow>
-        <sphereGeometry args={[9.2, 18, 14]} />
-        <meshStandardMaterial color="#e9bd98" roughness={0.48} />
-      </mesh>
-      <mesh position={[head[0] - 0.7, head[1] + 3.4, head[2] + 0.8]} castShadow>
-        <sphereGeometry args={[9.7, 18, 10, 0, Math.PI * 2, 0, Math.PI * 0.6]} />
-        <meshStandardMaterial color={character === "guardian" ? "#9c3549" : "#b9a475"} metalness={0.72} roughness={0.22} />
-      </mesh>
-      <mesh position={[head[0] + 5, head[1] + 1.5, head[2] + 8]} rotation={[0, 0, -0.08]} castShadow>
-        <boxGeometry args={[8, 2.6, 1.5]} />
-        <meshStandardMaterial color="#293340" metalness={0.2} roughness={0.32} />
-      </mesh>
-      <mesh position={[head[0] + 5, head[1] - 1, head[2] + 8]} castShadow>
-        <sphereGeometry args={[1.25, 8, 8]} />
-        <meshStandardMaterial color="#243344" />
-      </mesh>
-      <Bar start={[head[0] - 9, head[1] + 4, z]} end={[head[0] - 14, head[1] + 10, z - 1]} color="#8e3d47" radius={2.4} />
-
-      <Bar start={[shoulder[0] + 2, shoulder[1] - 4, z + 1]} end={[hand[0] - 8, hand[1] + 8, z + 1]} color={armor} radius={3.5} />
-      <Bar start={[hand[0] - 8, hand[1] + 8, z + 1]} end={hand} color={armor} radius={3} />
-      <mesh position={hand} castShadow>
-        <sphereGeometry args={[3.7, 10, 8]} />
-        <meshStandardMaterial color="#55453f" roughness={0.42} />
-      </mesh>
-      <mesh position={[shoulder[0] + 2, shoulder[1] - 5, z + 3]} rotation={[0, 0, -0.38]} castShadow>
-        <capsuleGeometry args={[4.5, 8, 3, 7]} />
-        <meshStandardMaterial color={riderColor || outfit} metalness={0.32} roughness={0.3} />
-      </mesh>
-
-      <Bar start={[hip[0] + 3, hip[1] - 4, z]} end={[knee[0], knee[1], z]} color={outfit} radius={4.6} metalness={0.1} />
-      <mesh position={knee} castShadow>
-        <sphereGeometry args={[4.2, 10, 8]} />
-        <meshStandardMaterial color={armor} metalness={0.45} roughness={0.28} />
-      </mesh>
-      <mesh position={[knee[0] + 0.5, knee[1], z + 4]}>
-        <sphereGeometry args={[2, 8, 6]} />
-        <meshStandardMaterial color="#e9cd89" metalness={0.75} roughness={0.23} />
-      </mesh>
-      <Bar start={[knee[0], knee[1], z]} end={boot} color={armor} radius={3.6} />
-      <mesh position={[boot[0] + 2, boot[1] - 2, boot[2] + 1]} rotation={[0, 0, -0.15]} castShadow>
-        <boxGeometry args={[11, 5, 6]} />
-        <meshStandardMaterial color="#503b35" roughness={0.48} />
-      </mesh>
-      <mesh position={[shoulder[0] + 7, shoulder[1] - 8, z + 5]}>
-        <sphereGeometry args={[2.5, 10, 8]} />
-        <meshStandardMaterial color="#f2d28d" metalness={0.84} roughness={0.2} />
-      </mesh>
-    </group>
-  );
-}
-
 export function Vehicle3DModel({ vehicle, model, character, riderColor, elapsed = 0 }: VehicleProps) {
   const spec = getVehicleModelSpec(model);
   const paint = spec.paint;
@@ -179,59 +100,8 @@ export function Vehicle3DModel({ vehicle, model, character, riderColor, elapsed 
   if (vehicle === "car") {
     return (
       <group>
-        <mesh position={[0, 26, 0]} castShadow receiveShadow>
-          <boxGeometry args={[105, 23, 28]} />
-          <meshStandardMaterial color={paint} metalness={0.52} roughness={0.27} />
-        </mesh>
-        <mesh position={[2, 45, -1]} castShadow>
-          <boxGeometry args={[57, 25, 24]} />
-          <meshStandardMaterial color={highlight} metalness={0.42} roughness={0.3} />
-        </mesh>
-        <mesh position={[4, 46, 12]} castShadow>
-          <boxGeometry args={[44, 16, 1.2]} />
-          <meshStandardMaterial color="#638698" metalness={0.32} roughness={0.22} />
-        </mesh>
-        <mesh position={[-17, 47, 12.7]}>
-          <boxGeometry args={[20, 13, 0.8]} />
-          <meshStandardMaterial color="#b9dae1" metalness={0.3} roughness={0.18} />
-        </mesh>
-        <mesh position={[6, 47, 13]}>
-          <boxGeometry args={[18, 13, 0.8]} />
-          <meshStandardMaterial color="#a7d5df" metalness={0.3} roughness={0.18} />
-        </mesh>
-        <mesh position={[43, 29, 15]} castShadow>
-          <boxGeometry args={[10, 5, 2]} />
-          <meshStandardMaterial color="#ffe8a0" emissive="#c88134" emissiveIntensity={0.14} />
-        </mesh>
-        <mesh position={[-48, 28, 15]} castShadow>
-          <boxGeometry args={[5, 5, 2]} />
-          <meshStandardMaterial color="#ee7d68" />
-        </mesh>
-        <mesh position={[0, 14, 0]} castShadow>
-          <boxGeometry args={[93, 5, 30]} />
-          <meshStandardMaterial color={trim} metalness={0.7} roughness={0.24} />
-        </mesh>
-        <Wheel3D x={-32} y={12} radius={11} elapsed={elapsed} spinRate={spinRate} />
-        <Wheel3D x={33} y={12} radius={11} elapsed={elapsed} spinRate={spinRate} />
-        <mesh position={[47, 23, 16]} castShadow>
-          <boxGeometry args={[9, 7, 2]} />
-          <meshStandardMaterial color={highlight} metalness={0.48} roughness={0.26} />
-        </mesh>
-        <mesh position={[54, 17, 13]}>
-          <boxGeometry args={[8, 3, 2]} />
-          <meshStandardMaterial color={trim} metalness={0.64} roughness={0.24} />
-        </mesh>
-        <Bar start={[-16, 29, 14.4]} end={[19, 29, 14.4]} color={highlight} radius={0.8} metalness={0.38} />
-        <Bar start={[1, 29, 14.5]} end={[1, 41, 14.5]} color={trim} radius={0.7} metalness={0.62} />
-        <Rider3D character={character} vehicle={vehicle} riderColor={riderColor} />
-        <mesh position={[0, 2, -2]}>
-          <boxGeometry args={[112, 1.8, 29]} />
-          <meshStandardMaterial color="#172632" roughness={0.75} />
-        </mesh>
-        <mesh position={[1, 18, 15.8]}>
-          <boxGeometry args={[67, 1.4, 1.2]} />
-          <meshStandardMaterial color={trim} metalness={0.62} />
-        </mesh>
+        <RoyalCar3D model={model} elapsed={elapsed} />
+        <RoyalRider3D character={character} vehicle={vehicle} riderColor={riderColor} />
       </group>
     );
   }
@@ -300,7 +170,7 @@ export function Vehicle3DModel({ vehicle, model, character, riderColor, elapsed 
           <Bar start={[crank[0] - 8, crank[1] - 10, 3]} end={[crank[0] + 8, crank[1] + 10, 3]} color={trim} radius={1.2} />
         </>
       )}
-      <Rider3D character={character} vehicle={vehicle} riderColor={riderColor} />
+      <RoyalRider3D character={character} vehicle={vehicle} riderColor={riderColor} />
       <mesh position={[0, 1.2, -1]}>
         <boxGeometry args={[motorcycle ? 82 : 89, 1.4, 4]} />
         <meshStandardMaterial color="#111d28" roughness={0.76} />
