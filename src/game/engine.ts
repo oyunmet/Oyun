@@ -8,7 +8,7 @@ export const GROUND_Y = 211;
 export const PLAYER_WIDTH = 31;
 export const PLAYER_HEIGHT = 29;
 
-export type ObstacleKind = "spikes" | "pit" | "axe" | "crate" | "platform";
+export type ObstacleKind = "spikes" | "pit" | "axe" | "crate" | "platform" | "monster";
 export type PickupKind = "gold" | "gem" | "heart";
 
 export type Obstacle = {
@@ -19,6 +19,8 @@ export type Obstacle = {
   y?: number;
   broken?: boolean;
   breakingFor?: number;
+  patrolCenter?: number;
+  patrolPhase?: number;
 };
 
 export type Pickup = {
@@ -97,8 +99,9 @@ export function createGameState(
   while (x < length - 105) {
     const roll = random();
     let kind: ObstacleKind;
-    if (level >= 4 && roll > 0.84) kind = "axe";
-    else if (roll > 0.66) kind = "pit";
+    if (level >= 4 && roll > 0.93) kind = "axe";
+    else if (index === 2 || roll > 0.78) kind = "monster";
+    else if (roll > 0.63) kind = "pit";
     else if (roll > 0.48) kind = "spikes";
     else if (roll > 0.32) kind = "crate";
     else kind = "platform";
@@ -112,6 +115,8 @@ export function createGameState(
       y: kind === "platform" ? 154 + random() * 15 : undefined,
       broken: false,
       breakingFor: 0,
+      patrolCenter: kind === "monster" ? x : undefined,
+      patrolPhase: kind === "monster" ? random() * Math.PI * 2 : undefined,
     };
     obstacles.push(obstacle);
 
@@ -219,6 +224,11 @@ export function stepGame(
   const playerWidth = vehicleSpec.hitboxWidth;
   const playerHeight = vehicleSpec.hitboxHeight;
   state.elapsed += dt;
+  for (const obstacle of state.obstacles) {
+    if (obstacle.kind === "monster" && obstacle.patrolCenter !== undefined) {
+      obstacle.x = obstacle.patrolCenter + Math.sin(state.elapsed * 1.8 + (obstacle.patrolPhase ?? 0)) * 12;
+    }
+  }
   state.hitCooldown = Math.max(0, state.hitCooldown - dt);
   state.invulnerable = Math.max(0, state.invulnerable - dt);
   state.dashCooldown = Math.max(0, state.dashCooldown - dt);
@@ -313,6 +323,7 @@ export function stepGame(
     if (obstacle.kind === "spikes" || obstacle.kind === "crate") {
       return player.y + playerHeight > GROUND_Y - (obstacle.kind === "spikes" ? 24 : 31);
     }
+    if (obstacle.kind === "monster") return player.y + playerHeight > GROUND_Y - 38;
     const axeY = GROUND_Y - 85 + Math.sin(state.elapsed * 4 + obstacle.x) * 24;
     return player.y < axeY + 25 && player.y + playerHeight > axeY - 18;
   });

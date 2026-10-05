@@ -211,6 +211,41 @@ export function GameObstacle({
     );
   }
 
+  if (obstacle.kind === "monster") {
+    const height = 48;
+    const walk = Math.sin(elapsed * 8 + (obstacle.patrolPhase ?? obstacle.x)) * 3;
+    return (
+      <Svg
+        width={(width + 14) * scale}
+        height={height * scale}
+        viewBox={`0 0 ${width + 14} ${height}`}
+        preserveAspectRatio="none"
+        style={{ position: "absolute", left: left - 7 * scale, top: (GROUND_Y - height + 2) * scale, pointerEvents: "none" }}
+      >
+        <Defs>
+          <LinearGradient id={`${id}-monster`} x1="0" y1="0" x2="1" y2="1">
+            <Stop offset="0" stopColor="#f4b277" />
+            <Stop offset=".45" stopColor="#bd5c69" />
+            <Stop offset="1" stopColor="#533e65" />
+          </LinearGradient>
+          <LinearGradient id={`${id}-horn`} x1="0" y1="0" x2="1" y2="1">
+            <Stop offset="0" stopColor="#fff0c9" />
+            <Stop offset="1" stopColor="#b48a6b" />
+          </LinearGradient>
+        </Defs>
+        <Ellipse cx={(width + 14) / 2} cy="46" rx="23" ry="2" fill="#14232d" opacity=".32" />
+        <Path d={`M${width / 2 - 5} 35l-3 10m17-10 4 10`} stroke="#514156" strokeWidth="5" strokeLinecap="round" />
+        <Path d={`M${width / 2 - 5} 36l${walk} 8m12-8 ${-walk} 8`} stroke="#e6b17d" strokeWidth="3" strokeLinecap="round" />
+        <Ellipse cx={(width + 14) / 2} cy="29" rx="20" ry="17" fill={`url(#${id}-monster)`} stroke="#694859" strokeWidth="1.5" />
+        <Path d={`M${width / 2 - 9} 18  ${width / 2 - 15} 5l12 9m17 4 4-13 7 14`} fill={`url(#${id}-horn)`} stroke="#7b5261" strokeWidth="1.2" strokeLinejoin="round" />
+        <Ellipse cx={(width + 14) / 2 + 6} cy="27" rx="8" ry="7" fill="#f2d8b8" />
+        <Circle cx={(width + 14) / 2 + 3} cy="26" r="2.2" fill="#f7d768" />
+        <Circle cx={(width + 14) / 2 + 10} cy="26" r="2.2" fill="#f7d768" />
+        <Path d={`M${width / 2 + 1} 32q5 4 11 0`} fill="none" stroke="#503b4e" strokeWidth="2" strokeLinecap="round" />
+      </Svg>
+    );
+  }
+
   const swing = Math.sin(elapsed * 4 + obstacle.x) * 30;
   const axeWidth = 52;
   const axeHeight = 84;

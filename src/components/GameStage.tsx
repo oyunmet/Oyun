@@ -13,6 +13,7 @@ import { HorseSprite } from "./GameSprites";
 import GameBackdrop from "./GameBackdrop";
 import { GameObstacle, GamePickup, GameTerrain } from "./GameWorldArt";
 import VehicleSprite from "./VehicleSprite";
+import GameScene3D from "./GameScene3D";
 import {
   createGameState,
   GameInput,
@@ -54,8 +55,6 @@ function snapshot(state: GameState): GameState {
   return {
     ...state,
     player: { ...state.player },
-    obstacles: state.obstacles.map((obstacle) => ({ ...obstacle })),
-    pickups: state.pickups.map((pickup) => ({ ...pickup })),
   };
 }
 
@@ -64,7 +63,8 @@ export default function GameStage({ level, character, vehicle, vehicleModel, bac
   const pendingJump = useRef(false);
   const pendingDash = useRef(false);
   const pointerHolds = useRef(new Map<string, "left" | "right">());
-  const frameRef = useRef(0);
+  const lastUiUpdate = useRef(0);
+  const animationFrame = useRef<number | null>(null);
   const stateRef = useRef(createGameState(level, upgrades as EngineUpgrades, vehicle));
   const [viewState, setViewState] = useState(() => snapshot(stateRef.current));
   const [stageWidth, setStageWidth] = useState(SCENE_WIDTH);
@@ -92,6 +92,8 @@ export default function GameStage({ level, character, vehicle, vehicleModel, bac
     stateRef.current = createGameState(level, upgrades as EngineUpgrades, vehicle);
     setViewState(snapshot(stateRef.current));
     input.current = { left: false, right: false, jump: false, dash: false };
+    lastTime.current = 0;
+    lastUiUpdate.current = 0;
     pointerHolds.current.clear();
     pendingJump.current = false;
     pendingDash.current = false;
@@ -102,7 +104,14 @@ export default function GameStage({ level, character, vehicle, vehicleModel, bac
 
   useEffect(() => {
     let active = true;
+    let scheduled = false;
+    const scheduleFrame = () => {
+      if (!active || scheduled || (Platform.OS === "web" && typeof document !== "undefined" && document.visibilityState === "hidden")) return;
+      scheduled = true;
+      animationFrame.current = requestAnimationFrame(loop);
+    };
     const loop = (now: number) => {
+      scheduled = false;
       if (!active) return;
       const dt = lastTime.current ? (now - lastTime.current) / 1000 : 1 / 60;
       lastTime.current = now;
@@ -135,16 +144,33 @@ export default function GameStage({ level, character, vehicle, vehicleModel, bac
           onGameOver({ gold: Math.floor(stateRef.current.gold * 0.6), gems: stateRef.current.gems });
         }
       }
-      if (Math.floor(now / (1000 / 60)) !== frameRef.current && !stateRef.current.ended) {
-        frameRef.current = Math.floor(now / (1000 / 60));
+      if (now - lastUiUpdate.current >= 1000 / 30 && !stateRef.current.ended) {
+        lastUiUpdate.current = now;
         setViewState(snapshot(stateRef.current));
       }
-      if (!stateRef.current.ended) requestAnimationFrame(loop);
+      if (!stateRef.current.ended) scheduleFrame();
     };
-    const id = requestAnimationFrame(loop);
+    const handleVisibilityChange = () => {
+      lastTime.current = 0;
+      if (document.visibilityState === "hidden") {
+        if (animationFrame.current !== null) cancelAnimationFrame(animationFrame.current);
+        animationFrame.current = null;
+        scheduled = false;
+      } else {
+        scheduleFrame();
+      }
+    };
+    if (Platform.OS === "web" && typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+    }
+    scheduleFrame();
     return () => {
       active = false;
-      cancelAnimationFrame(id);
+      if (animationFrame.current !== null) cancelAnimationFrame(animationFrame.current);
+      animationFrame.current = null;
+      if (Platform.OS === "web" && typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+      }
       lastTime.current = 0;
     };
   }, [upgrades, soundOn, onComplete, onGameOver, horseX]);
@@ -295,8 +321,18 @@ export default function GameStage({ level, character, vehicle, vehicleModel, bac
           <View style={[StyleSheet.absoluteFill, { pointerEvents: "none" }]}>
             <GameBackdrop cameraX={cameraX} elapsed={viewState.elapsed} level={level} theme={backgroundId} />
           </View>
-            <GameTerrain scale={scale} theme={backgroundId} />
-          {liveObstacles.map((obstacle) =>
+          <GameTerrain scale={scale} theme={backgroundId} />
+          <GameScene3D
+            state={viewState}
+            cameraX={cameraX}
+            character={character}
+            vehicle={vehicle}
+            vehicleModel={vehicleModel}
+            riderColor={tint}
+            scale={scale}
+            backgroundId={backgroundId}
+          />
+          {Platform.OS !== "web" && liveObstacles.map((obstacle) =>
             <GameObstacle
               key={obstacle.id}
               obstacle={obstacle}
@@ -305,7 +341,7 @@ export default function GameStage({ level, character, vehicle, vehicleModel, bac
               elapsed={viewState.elapsed}
             />,
           )}
-          {livePickups.map((pickup) =>
+          {Platform.OS !== "web" && livePickups.map((pickup) =>
             <GamePickup
               key={pickup.id}
               pickup={pickup}
@@ -314,7 +350,7 @@ export default function GameStage({ level, character, vehicle, vehicleModel, bac
               elapsed={viewState.elapsed}
             />,
           )}
-          <View
+          {Platform.OS !== "web" && <View
             style={[
               styles.vehicleSprite,
               { pointerEvents: "none" },
@@ -342,7 +378,7 @@ export default function GameStage({ level, character, vehicle, vehicleModel, bac
               elapsed={viewState.elapsed}
               wheelRotation={((viewState.player.x - 34) / (vehicle === "car" ? 10.5 : 14)) * (180 / Math.PI)}
             />
-          </View>
+          </View>}
           {cinematic && (
             <View style={styles.cinematicCover}>
               <Text style={styles.cinematicTitle}>ATLI PRENSESİ KAÇIRDI!</Text>

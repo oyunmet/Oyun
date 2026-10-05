@@ -11,6 +11,7 @@ import {
   getCharacterSpec,
 } from "../game/characters";
 import VehicleSprite from "../components/VehicleSprite";
+import VehicleShowcase3D from "../components/VehicleShowcase3D";
 import { BackgroundIllustration } from "../components/GameBackdrop";
 
 const SKINS = ["#3b82f6", "#ef5b59", "#55bd87", "#d28d45", "#b57be0", "#ec7eaa"];
@@ -168,7 +169,30 @@ export default function ShopScreen({
         </View>
 
         <Text style={styles.sectionTitle}>ARAÇ GARAJI</Text>
-        <Text style={styles.sectionCopy}>Bisiklet, motor ve araba için renkli modellerini aç.</Text>
+        <Text style={styles.sectionCopy}>Bir model seç; kahramanını araçla birlikte canlı 3D olarak incele.</Text>
+        <View style={styles.liveGaragePanel}>
+          <View style={styles.liveGarageHeading}>
+            <View>
+              <Text style={styles.liveGarageEyebrow}>SARAY GARAJI · 3D ÖNİZLEME</Text>
+              <Text style={styles.liveGarageName}>
+                {VEHICLE_MODELS.find((model) => model.id === profile.vehicleModel)?.name ?? "Saray Bisikleti"}
+              </Text>
+            </View>
+            <View style={styles.liveGarageBadge}>
+              <View style={styles.liveGarageDot} />
+              <Text style={styles.liveGarageBadgeText}>CANLI</Text>
+            </View>
+          </View>
+          <View style={styles.liveGarageStage}>
+            <VehicleShowcase3D
+              vehicle={profile.vehicle}
+              model={profile.vehicleModel}
+              character={profile.character}
+              riderColor={SKINS[profile.skin] ?? SKINS[0]}
+            />
+          </View>
+          <Text style={styles.liveGarageHint}>Kahraman seçtiğin aracın üzerinde sürüş pozisyonunda gösterilir.</Text>
+        </View>
         {VEHICLES.map((vehicle) => {
           const categoryOwned = profile.vehiclesOwned.includes(vehicle.id);
           return (
@@ -388,6 +412,15 @@ const styles = StyleSheet.create({
   statBuyButton: { minHeight: 29, marginTop: 8, borderRadius: 9, backgroundColor: "#777de0", borderWidth: 1, borderColor: "#a6a9f3", alignItems: "center", justifyContent: "center", paddingHorizontal: 4 },
   statBuyText: { color: "#fff", fontWeight: "900", fontSize: 7, letterSpacing: 0.2, textAlign: "center" },
   vehicleCategory: { marginTop: 10, marginBottom: 11 },
+  liveGaragePanel: { marginTop: 10, marginBottom: 11, padding: 12, borderRadius: 18, backgroundColor: "#1d2b42", borderWidth: 1, borderColor: "#52637e", overflow: "hidden" },
+  liveGarageHeading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingBottom: 7 },
+  liveGarageEyebrow: { color: "#c7d3e4", fontSize: 8, fontWeight: "900", letterSpacing: 1.4 },
+  liveGarageName: { color: "#fff2d0", fontSize: 16, fontWeight: "900", marginTop: 3 },
+  liveGarageBadge: { flexDirection: "row", alignItems: "center", gap: 5, borderRadius: 99, paddingVertical: 5, paddingHorizontal: 8, backgroundColor: "#31445e", borderWidth: 1, borderColor: "#71819b" },
+  liveGarageDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#7de0b1" },
+  liveGarageBadgeText: { color: "#d6f1e4", fontSize: 7, fontWeight: "900", letterSpacing: 0.8 },
+  liveGarageStage: { height: 130, overflow: "hidden", borderRadius: 12, backgroundColor: "#dbe5f0", borderWidth: 1, borderColor: "rgba(255,255,255,.2)" },
+  liveGarageHint: { color: "#b7c5d9", fontSize: 8, lineHeight: 12, marginTop: 7 },
   vehicleCategoryHeading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 7, paddingHorizontal: 2 },
   vehicleCategoryTitle: { color: "#536687", fontSize: 9, letterSpacing: 1.4, fontWeight: "900" },
   vehicleCategoryStatus: { color: "#8b94aa", fontSize: 7, fontWeight: "900", letterSpacing: 0.6 },
