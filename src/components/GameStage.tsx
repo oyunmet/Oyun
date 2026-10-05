@@ -321,7 +321,7 @@ export default function GameStage({ level, character, vehicle, vehicleModel, bac
           <View style={[StyleSheet.absoluteFill, { pointerEvents: "none" }]}>
             <GameBackdrop cameraX={cameraX} elapsed={viewState.elapsed} level={level} theme={backgroundId} />
           </View>
-          <GameTerrain scale={scale} theme={backgroundId} />
+          {Platform.OS !== "web" && <GameTerrain scale={scale} theme={backgroundId} />}
           <GameScene3D
             state={viewState}
             cameraX={cameraX}

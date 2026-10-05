@@ -44,37 +44,43 @@ function Wheel3D({
   y,
   radius,
   elapsed,
+  spinRate,
   tire = "#20242d",
 }: {
   x: number;
   y: number;
   radius: number;
   elapsed: number;
+  spinRate: number;
   tire?: string;
 }) {
   return (
-    <group position={[x, y, 0]} rotation={[0, 0, elapsed * -4]}>
+    <group position={[x, y, 0]} rotation={[0, 0, elapsed * -spinRate]}>
       <mesh castShadow>
-        <torusGeometry args={[radius, radius * 0.105, 8, 28]} />
+        <torusGeometry args={[radius, radius * 0.12, 10, 32]} />
         <meshStandardMaterial color={tire} roughness={0.62} />
       </mesh>
       <mesh position={[0, 0, 0.8]}>
-        <torusGeometry args={[radius * 0.69, radius * 0.045, 7, 24]} />
+        <torusGeometry args={[radius * 0.78, radius * 0.045, 8, 28]} />
         <meshStandardMaterial color="#d4bd8d" metalness={0.82} roughness={0.22} />
+      </mesh>
+      <mesh position={[0, 0, 1.35]}>
+        <torusGeometry args={[radius * 0.34, 0.85, 6, 20]} />
+        <meshStandardMaterial color="#eef0e5" metalness={0.82} roughness={0.24} />
       </mesh>
       <mesh position={[0, 0, 1]}>
         <cylinderGeometry args={[radius * 0.16, radius * 0.16, 1.8, 16]} />
         <meshStandardMaterial color="#f2d892" metalness={0.75} roughness={0.2} />
       </mesh>
-      {Array.from({ length: 8 }, (_, index) => {
-        const angle = (index / 8) * Math.PI * 2;
+      {Array.from({ length: 10 }, (_, index) => {
+        const angle = (index / 10) * Math.PI * 2;
         return (
           <Bar
             key={index}
             start={[Math.cos(angle) * radius * 0.14, Math.sin(angle) * radius * 0.14, 1.2]}
-            end={[Math.cos(angle) * radius * 0.68, Math.sin(angle) * radius * 0.68, 1.2]}
+            end={[Math.cos(angle) * radius * 0.75, Math.sin(angle) * radius * 0.75, 1.2]}
             color="#d8d2c2"
-            radius={0.65}
+            radius={0.55}
           />
         );
       })}
@@ -120,6 +126,10 @@ function Rider3D({
         <sphereGeometry args={[9.7, 18, 10, 0, Math.PI * 2, 0, Math.PI * 0.6]} />
         <meshStandardMaterial color={character === "guardian" ? "#9c3549" : "#b9a475"} metalness={0.72} roughness={0.22} />
       </mesh>
+      <mesh position={[head[0] + 5, head[1] + 1.5, head[2] + 8]} rotation={[0, 0, -0.08]} castShadow>
+        <boxGeometry args={[8, 2.6, 1.5]} />
+        <meshStandardMaterial color="#293340" metalness={0.2} roughness={0.32} />
+      </mesh>
       <mesh position={[head[0] + 5, head[1] - 1, head[2] + 8]} castShadow>
         <sphereGeometry args={[1.25, 8, 8]} />
         <meshStandardMaterial color="#243344" />
@@ -132,11 +142,19 @@ function Rider3D({
         <sphereGeometry args={[3.7, 10, 8]} />
         <meshStandardMaterial color="#55453f" roughness={0.42} />
       </mesh>
+      <mesh position={[shoulder[0] + 2, shoulder[1] - 5, z + 3]} rotation={[0, 0, -0.38]} castShadow>
+        <capsuleGeometry args={[4.5, 8, 3, 7]} />
+        <meshStandardMaterial color={riderColor || outfit} metalness={0.32} roughness={0.3} />
+      </mesh>
 
       <Bar start={[hip[0] + 3, hip[1] - 4, z]} end={[knee[0], knee[1], z]} color={outfit} radius={4.6} metalness={0.1} />
       <mesh position={knee} castShadow>
         <sphereGeometry args={[4.2, 10, 8]} />
         <meshStandardMaterial color={armor} metalness={0.45} roughness={0.28} />
+      </mesh>
+      <mesh position={[knee[0] + 0.5, knee[1], z + 4]}>
+        <sphereGeometry args={[2, 8, 6]} />
+        <meshStandardMaterial color="#e9cd89" metalness={0.75} roughness={0.23} />
       </mesh>
       <Bar start={[knee[0], knee[1], z]} end={boot} color={armor} radius={3.6} />
       <mesh position={[boot[0] + 2, boot[1] - 2, boot[2] + 1]} rotation={[0, 0, -0.15]} castShadow>
@@ -156,6 +174,7 @@ export function Vehicle3DModel({ vehicle, model, character, riderColor, elapsed 
   const paint = spec.paint;
   const highlight = spec.highlight;
   const trim = spec.trim;
+  const spinRate = vehicle === "motorcycle" ? 15 : vehicle === "car" ? 13 : 11;
 
   if (vehicle === "car") {
     return (
@@ -192,8 +211,18 @@ export function Vehicle3DModel({ vehicle, model, character, riderColor, elapsed 
           <boxGeometry args={[93, 5, 30]} />
           <meshStandardMaterial color={trim} metalness={0.7} roughness={0.24} />
         </mesh>
-        <Wheel3D x={-32} y={12} radius={11} elapsed={elapsed} />
-        <Wheel3D x={33} y={12} radius={11} elapsed={elapsed} />
+        <Wheel3D x={-32} y={12} radius={11} elapsed={elapsed} spinRate={spinRate} />
+        <Wheel3D x={33} y={12} radius={11} elapsed={elapsed} spinRate={spinRate} />
+        <mesh position={[47, 23, 16]} castShadow>
+          <boxGeometry args={[9, 7, 2]} />
+          <meshStandardMaterial color={highlight} metalness={0.48} roughness={0.26} />
+        </mesh>
+        <mesh position={[54, 17, 13]}>
+          <boxGeometry args={[8, 3, 2]} />
+          <meshStandardMaterial color={trim} metalness={0.64} roughness={0.24} />
+        </mesh>
+        <Bar start={[-16, 29, 14.4]} end={[19, 29, 14.4]} color={highlight} radius={0.8} metalness={0.38} />
+        <Bar start={[1, 29, 14.5]} end={[1, 41, 14.5]} color={trim} radius={0.7} metalness={0.62} />
         <Rider3D character={character} vehicle={vehicle} riderColor={riderColor} />
         <mesh position={[0, 2, -2]}>
           <boxGeometry args={[112, 1.8, 29]} />
@@ -216,8 +245,8 @@ export function Vehicle3DModel({ vehicle, model, character, riderColor, elapsed 
 
   return (
     <group>
-      <Wheel3D x={rear[0]} y={rear[1]} radius={motorcycle ? 13 : 15} elapsed={elapsed} />
-      <Wheel3D x={front[0]} y={front[1]} radius={motorcycle ? 13 : 15} elapsed={elapsed} />
+      <Wheel3D x={rear[0]} y={rear[1]} radius={motorcycle ? 13 : 15} elapsed={elapsed} spinRate={spinRate} />
+      <Wheel3D x={front[0]} y={front[1]} radius={motorcycle ? 13 : 15} elapsed={elapsed} spinRate={spinRate} />
       <Bar start={rear} end={crank} color={paint} radius={motorcycle ? 4 : 2.4} />
       <Bar start={crank} end={seat} color={highlight} radius={motorcycle ? 4 : 2.4} />
       <Bar start={seat} end={rear} color={trim} radius={motorcycle ? 3.4 : 2.1} />
@@ -239,9 +268,21 @@ export function Vehicle3DModel({ vehicle, model, character, riderColor, elapsed 
             <boxGeometry args={[25, 9, 17]} />
             <meshStandardMaterial color={highlight} metalness={0.58} roughness={0.2} />
           </mesh>
+          <mesh position={[7, 34, 11]}>
+            <boxGeometry args={[17, 3, 1.5]} />
+            <meshStandardMaterial color={trim} metalness={0.72} roughness={0.22} />
+          </mesh>
           <mesh position={[0, 24, 12]}>
             <boxGeometry args={[29, 2, 2]} />
             <meshStandardMaterial color={trim} metalness={0.82} roughness={0.22} />
+          </mesh>
+          <mesh position={[1, 25, 13]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+            <cylinderGeometry args={[7, 7, 5, 14]} />
+            <meshStandardMaterial color="#545965" metalness={0.78} roughness={0.32} />
+          </mesh>
+          <mesh position={[1, 25, 16]}>
+            <torusGeometry args={[4.8, 0.8, 6, 14]} />
+            <meshStandardMaterial color={trim} metalness={0.85} roughness={0.2} />
           </mesh>
           <mesh position={[front[0] + 2, 39, 0]} castShadow>
             <sphereGeometry args={[6, 14, 10]} />
