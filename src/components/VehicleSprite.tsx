@@ -149,20 +149,27 @@ export default function VehicleSprite({
           <G>
           <Wheel id={id} cx={31} cy={59} radius={10.5} rotation={rollingRotation} />
           <Wheel id={id} cx={79} cy={59} radius={10.5} rotation={rollingRotation} />
-          <Path d="M11 54q2-7 10-9l13-14q5-5 15-5h22q9 0 14 8l10 10q9 3 12 10v8H10Z" fill={`url(#${id}-body)`} stroke={modelSpec.highlight} strokeWidth="1.7" strokeLinejoin="round" />
-          <Path d="m36 31q4-3 12-3h10v16H24Zm26-3h7q7 0 11 7l7 9H62Z" fill={`url(#${id}-glass)`} stroke={modelSpec.highlight} strokeWidth="1.3" strokeLinejoin="round" />
-          <Path d="M60 28v17m-36 0h61" stroke={modelSpec.trim} strokeWidth="1.5" />
-          <Path d="M22 51h15m34 0h21" stroke={riderColor} strokeWidth="2.1" opacity=".9" strokeLinecap="round" />
-          <Path d="M13 51h13m71 0 8 2" stroke={modelSpec.highlight} strokeWidth="2.2" strokeLinecap="round" />
-          <Path d="M15 58h6m82 0h6" stroke="#e9c477" strokeWidth="2.4" strokeLinecap="round" />
-          <Path d="M48 45v12m27-12v12" stroke="#8b5947" strokeWidth="1.4" />
+          <Path d="M8 54q1-5 7-8l15-4 10-12q4-5 12-5h18q10 0 15 8l10 12 9 3q6 2 8 7l1 5q0 3-4 3H11q-4 0-4-4Z" fill={`url(#${id}-body)`} stroke="#775542" strokeWidth="2" strokeLinejoin="round" />
+          <Path d="m35 41 6-9q3-4 10-4h7v14H34Zm27-13h6q7 0 11 7l6 7H62Z" fill={`url(#${id}-glass)`} stroke={modelSpec.highlight} strokeWidth="1.5" strokeLinejoin="round" />
+          <Path d="m40 39 5-7q2-2 5-2h3l-5 10Zm27-9h2q5 0 8 5l3 4h-8Z" fill="#fff" opacity=".34" />
+          <Path d="M60 28v16m-26 0h53" fill="none" stroke={modelSpec.trim} strokeWidth="1.6" strokeLinecap="round" />
+          <Path d="M13 48q14-4 22-4m29 1q12 1 22-1m-72 8q15-3 28-1" fill="none" stroke={modelSpec.highlight} strokeWidth="1.35" opacity=".82" strokeLinecap="round" />
+          <Path d="M48 44v12q13 3 27 0V44m-27 7h-9m41 0h-5" fill="none" stroke="#815b48" strokeWidth="1.25" opacity=".9" strokeLinejoin="round" />
+          <Path d="M63 47h5m-2.5-1.4v2.8" stroke={modelSpec.highlight} strokeWidth="1.2" strokeLinecap="round" />
+          <Path d="M20 58a11 11 0 0 1 22 0m26 0a11 11 0 0 1 22 0" fill="none" stroke={modelSpec.highlight} strokeWidth="1.7" />
+          <Path d="M11 54h7l-1 4h-7m92-7 5 1 1 5h-7" fill={modelSpec.trim} stroke="#775542" strokeWidth="1" strokeLinejoin="round" />
+          <Path d="M11 47q4-2 8-1l-1 4-7 1Zm92 1q3 1 5 3l-6 1-2-3Z" fill="#ffefc2" stroke={modelSpec.highlight} strokeWidth="1" strokeLinejoin="round" />
+          <Path d="M17 58h5m81 0h5" stroke="#fff0bd" strokeWidth="1.4" strokeLinecap="round" opacity=".9" />
           {modelId === "car-sunrise" && (
-            <Path d="M43 26h25l-4-4H48Z" fill={modelSpec.trim} stroke={modelSpec.highlight} strokeWidth="1" />
+            <G>
+              <Path d="M82 46q8 1 14 4m-12 1q6 1 10 3" fill="none" stroke={modelSpec.trim} strokeWidth="1.5" strokeLinecap="round" />
+              <Circle cx="30" cy="48" r="2.1" fill={modelSpec.trim} stroke={modelSpec.highlight} strokeWidth=".7" />
+            </G>
           )}
           {modelId === "car-ice" && (
             <G>
-              <Path d="m48 36 4 4-4 4-4-4Z" fill={modelSpec.highlight} />
-              <Path d="m78 36 4 4-4 4-4-4Z" fill={modelSpec.highlight} />
+              <Path d="m30 45 2 2.6-2 2.6-2-2.6Zm62 0 2 2.6-2 2.6-2-2.6Z" fill={modelSpec.highlight} stroke="#fff" strokeWidth=".55" />
+              <Path d="M30 46.2v2.8m-1.2-1.4h2.4m61.6-1.4v2.8m-1.2-1.4H94" stroke="#fff" strokeWidth=".6" strokeLinecap="round" />
             </G>
           )}
           </G>
