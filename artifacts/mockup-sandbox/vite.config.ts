@@ -50,6 +50,10 @@ export default defineConfig({
     alias: {
       '@': path.resolve(import.meta.dirname, 'src'),
       'react-native': path.resolve(import.meta.dirname, 'node_modules/react-native-web'),
+      'react-native-svg': path.resolve(
+        import.meta.dirname,
+        'node_modules/react-native-svg/lib/module/elements.web.js',
+      ),
       'expo-status-bar': path.resolve(import.meta.dirname, 'src/stubs/status-bar.tsx'),
       '@react-native-async-storage/async-storage': path.resolve(
         import.meta.dirname,

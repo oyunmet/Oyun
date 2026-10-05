@@ -1,5 +1,18 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+export type VehicleId = "bike" | "motorcycle" | "car";
+export type VehicleModelId =
+  | "bike-royal"
+  | "bike-rainbow"
+  | "bike-cloud"
+  | "motorcycle-comet"
+  | "motorcycle-berry"
+  | "motorcycle-jungle"
+  | "car-palace"
+  | "car-sunrise"
+  | "car-ice";
+export type CharacterId = "knight" | "ranger" | "guardian";
+
 export const SAVE_KEY = "saraya-yolculuk.profile.v1";
 
 export type UpgradeKey =
