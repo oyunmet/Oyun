@@ -24,7 +24,7 @@ import {
 } from "../game/engine";
 import { EngineUpgrades } from "../game/engine";
 import { getVehicleSpec } from "../game/vehicles";
-import { UpgradeKey, VehicleId } from "../storage/profile";
+import { CharacterId, UpgradeKey, VehicleId } from "../storage/profile";
 import { playSound } from "../audio/sounds";
 
 const SKINS = ["#3b82f6", "#ef5b59", "#55bd87", "#d28d45", "#b57be0", "#ec7eaa"];
@@ -38,6 +38,7 @@ const WEB_TOUCH_STYLE = {
 
 type Props = {
   level: number;
+  character: CharacterId;
   vehicle: VehicleId;
   upgrades: Record<UpgradeKey, number>;
   skin: number;
@@ -56,7 +57,7 @@ function snapshot(state: GameState): GameState {
   };
 }
 
-export default function GameStage({ level, vehicle, upgrades, skin, soundOn, onExit, onComplete, onGameOver }: Props) {
+export default function GameStage({ level, character, vehicle, upgrades, skin, soundOn, onExit, onComplete, onGameOver }: Props) {
   const input = useRef<GameInput>({ left: false, right: false, jump: false, dash: false });
   const pendingJump = useRef(false);
   const pendingDash = useRef(false);
@@ -75,6 +76,10 @@ export default function GameStage({ level, vehicle, upgrades, skin, soundOn, onE
   const playerLeft = (viewState.player.x - cameraX - (vehicleSpec.spriteWidth - vehicleSpec.hitboxWidth) / 2) * scale;
   const playerTop = (viewState.player.y + vehicleSpec.hitboxHeight - vehicleSpec.spriteHeight) * scale;
   const tint = SKINS[skin] ?? SKINS[0];
+  const rideBob = viewState.player.grounded ? Math.sin(viewState.elapsed * 13) * 1.1 : 0;
+  const rideLean = viewState.player.grounded
+    ? Math.sin(viewState.elapsed * 8) * 1.6
+    : Math.max(-5, Math.min(7, viewState.player.vy / 48));
 
   const measureStage = (event: LayoutChangeEvent) => {
     const measured = event.nativeEvent.layout.width;
@@ -285,7 +290,7 @@ export default function GameStage({ level, vehicle, upgrades, skin, soundOn, onE
 
       <View onLayout={measureStage} style={styles.stage}>
         <View style={[styles.sky, { height: SCENE_HEIGHT * scale }]}>
-          <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+          <View style={[StyleSheet.absoluteFill, { pointerEvents: "none" }]}>
             <GameBackdrop cameraX={cameraX} elapsed={viewState.elapsed} level={level} />
           </View>
             <GameTerrain scale={scale} />
@@ -308,9 +313,9 @@ export default function GameStage({ level, vehicle, upgrades, skin, soundOn, onE
             />,
           )}
           <View
-            pointerEvents="none"
             style={[
               styles.vehicleSprite,
+              { pointerEvents: "none" },
               {
                 left: playerLeft,
                 top: playerTop,
@@ -318,7 +323,8 @@ export default function GameStage({ level, vehicle, upgrades, skin, soundOn, onE
                 height: vehicleSpec.spriteHeight * scale,
                 opacity: viewState.invulnerable > 0 ? 0.58 : 1,
                 transform: [
-                  { translateY: Math.sin(viewState.elapsed * 11) * 0.55 * scale },
+                  { translateY: rideBob * scale },
+                  { rotate: `${rideLean}deg` },
                   { scaleX: viewState.player.direction * (viewState.dashTime > 0 ? 1.08 : 1) },
                 ],
               },
@@ -326,9 +332,11 @@ export default function GameStage({ level, vehicle, upgrades, skin, soundOn, onE
           >
             <VehicleSprite
               vehicle={vehicle}
+              character={character}
               riderColor={tint}
               width={vehicleSpec.spriteWidth * scale}
               height={vehicleSpec.spriteHeight * scale}
+              elapsed={viewState.elapsed}
             />
           </View>
           {cinematic && (

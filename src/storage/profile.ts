@@ -12,6 +12,9 @@ export type UpgradeKey =
   | "dash";
 
 export type VehicleId = "bike" | "motorcycle" | "car";
+export type CharacterId = "knight" | "ranger" | "guardian";
+export type CharacterAttribute = "speed" | "jump" | "health" | "armor";
+export type CharacterUpgradeLevels = Record<CharacterAttribute, number>;
 
 export type PlayerProfile = {
   gold: number;
@@ -20,6 +23,9 @@ export type PlayerProfile = {
   upgrades: Record<UpgradeKey, number>;
   skin: number;
   skinsOwned: number[];
+  character: CharacterId;
+  charactersOwned: CharacterId[];
+  characterUpgrades: Record<CharacterId, CharacterUpgradeLevels>;
   vehicle: VehicleId;
   vehiclesOwned: VehicleId[];
   soundOn: boolean;
@@ -40,6 +46,13 @@ export const DEFAULT_PROFILE: PlayerProfile = {
   },
   skin: 0,
   skinsOwned: [0],
+  character: "knight",
+  charactersOwned: ["knight"],
+  characterUpgrades: {
+    knight: { speed: 0, jump: 0, health: 0, armor: 0 },
+    ranger: { speed: 0, jump: 0, health: 0, armor: 0 },
+    guardian: { speed: 0, jump: 0, health: 0, armor: 0 },
+  },
   vehicle: "bike",
   vehiclesOwned: ["bike"],
   soundOn: true,
@@ -47,6 +60,9 @@ export const DEFAULT_PROFILE: PlayerProfile = {
 
 const isVehicleId = (value: unknown): value is VehicleId =>
   value === "bike" || value === "motorcycle" || value === "car";
+
+const isCharacterId = (value: unknown): value is CharacterId =>
+  value === "knight" || value === "ranger" || value === "guardian";
 
 const clampNumber = (value: unknown, fallback: number, min: number, max: number) =>
   typeof value === "number" && Number.isFinite(value)
@@ -68,6 +84,29 @@ export function parseProfile(raw: string | null): PlayerProfile {
   const vehicle = isVehicleId(saved.vehicle) && vehiclesOwned.includes(saved.vehicle)
     ? saved.vehicle
     : "bike";
+  const savedCharacters = Array.isArray(saved.charactersOwned)
+    ? saved.charactersOwned.filter(isCharacterId)
+    : ["knight" as const];
+  const charactersOwned = Array.from(new Set<CharacterId>(["knight", ...savedCharacters]));
+  const character = isCharacterId(saved.character) && charactersOwned.includes(saved.character)
+    ? saved.character
+    : "knight";
+  const savedCharacterUpgrades = saved.characterUpgrades as
+    | Partial<Record<CharacterId, Partial<CharacterUpgradeLevels>>>
+    | undefined;
+  const characterUpgrades = (["knight", "ranger", "guardian"] as const).reduce(
+    (all, id) => {
+      const levels = savedCharacterUpgrades?.[id] ?? {};
+      all[id] = {
+        speed: clampNumber(levels.speed, 0, 0, 5),
+        jump: clampNumber(levels.jump, 0, 0, 5),
+        health: clampNumber(levels.health, 0, 0, 5),
+        armor: clampNumber(levels.armor, 0, 0, 5),
+      };
+      return all;
+    },
+    {} as Record<CharacterId, CharacterUpgradeLevels>,
+  );
 
   return {
     gold: clampNumber(saved.gold, DEFAULT_PROFILE.gold, 0, 999999),
@@ -75,6 +114,9 @@ export function parseProfile(raw: string | null): PlayerProfile {
     unlockedLevel: clampNumber(saved.unlockedLevel, 1, 1, 9999),
     skin: clampNumber(saved.skin, 0, 0, 5),
     skinsOwned: Array.from(new Set([0, ...savedSkins])),
+    character,
+    charactersOwned,
+    characterUpgrades,
     vehicle,
     vehiclesOwned,
     soundOn: typeof saved.soundOn === "boolean" ? saved.soundOn : true,

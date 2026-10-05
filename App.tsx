@@ -19,11 +19,18 @@ import {
   parseProfile,
   PlayerProfile,
   saveProfile,
+  CharacterAttribute,
+  CharacterId,
   UpgradeKey,
   VehicleId,
 } from "./src/storage/profile";
 import { purchaseUpgrade, SHOP_ITEMS } from "./src/game/shop";
 import { getVehicleSpec, purchaseVehicle } from "./src/game/vehicles";
+import {
+  getCharacterSpec,
+  purchaseCharacter as unlockCharacter,
+  purchaseCharacterUpgrade,
+} from "./src/game/characters";
 
 type Screen = "menu" | "shop" | "map" | "settings" | "playing" | "completed" | "gameover";
 type Rewards = { gold: number; gems: number };
@@ -36,6 +43,12 @@ export default function App() {
     upgrades: { ...DEFAULT_PROFILE.upgrades },
     skinsOwned: [...DEFAULT_PROFILE.skinsOwned],
     vehiclesOwned: [...DEFAULT_PROFILE.vehiclesOwned],
+    charactersOwned: [...DEFAULT_PROFILE.charactersOwned],
+    characterUpgrades: {
+      knight: { ...DEFAULT_PROFILE.characterUpgrades.knight },
+      ranger: { ...DEFAULT_PROFILE.characterUpgrades.ranger },
+      guardian: { ...DEFAULT_PROFILE.characterUpgrades.guardian },
+    },
   }));
   const profileRef = useRef(profile);
   const [loaded, setLoaded] = useState(false);
@@ -141,6 +154,37 @@ export default function App() {
     setToast(`${item.title} kalıcı olarak geliştirildi.`);
   }, [commitProfile]);
 
+  const buyCharacterUpgrade = useCallback((character: CharacterId, attribute: CharacterAttribute) => {
+    const before = profileRef.current;
+    const next = purchaseCharacterUpgrade(before, character, attribute);
+    if (!next) {
+      const current = before.characterUpgrades[character][attribute];
+      setToast(current >= 5 ? "Bu özellik en yüksek seviyede." : "Bu özellik için yeterli altın yok.");
+      return;
+    }
+    commitProfile(() => next);
+    playSound("coin", before.soundOn);
+    setToast(`${getCharacterSpec(character).name} için ${attribute === "health" ? "can" : attribute === "armor" ? "zırh" : attribute === "jump" ? "zıplama" : "hız"} geliştirildi.`);
+  }, [commitProfile]);
+
+  const selectCharacter = useCallback((character: CharacterId) => {
+    const before = profileRef.current;
+    if (before.charactersOwned.includes(character)) {
+      commitProfile((current) => ({ ...current, character }));
+      setToast(`${getCharacterSpec(character).name} seçildi.`);
+      playSound("coin", before.soundOn);
+      return;
+    }
+    const next = unlockCharacter(before, character);
+    if (!next) {
+      setToast("Bu kahraman için yeterli altın yok.");
+      return;
+    }
+    commitProfile(() => next);
+    playSound("gem", before.soundOn);
+    setToast(`${getCharacterSpec(character).name} açıldı ve seçildi.`);
+  }, [commitProfile]);
+
   const selectVehicle = useCallback((vehicle: VehicleId) => {
     const before = profileRef.current;
     if (before.vehiclesOwned.includes(vehicle)) {
@@ -158,6 +202,16 @@ export default function App() {
     playSound("coin", before.soundOn);
     setToast(`${getVehicleSpec(vehicle).name} satın alındı ve seçildi.`);
   }, [commitProfile]);
+
+  const characterSpec = getCharacterSpec(profile.character);
+  const characterLevels = profile.characterUpgrades[profile.character];
+  const gameUpgrades = {
+    ...profile.upgrades,
+    speed: profile.upgrades.speed + characterLevels.speed + (characterSpec.bonus.speed ?? 0),
+    jump: profile.upgrades.jump + characterLevels.jump + (characterSpec.bonus.jump ?? 0),
+    maxHp: profile.upgrades.maxHp + characterLevels.health + (characterSpec.bonus.health ?? 0),
+    armor: profile.upgrades.armor + characterLevels.armor + (characterSpec.bonus.armor ?? 0),
+  };
 
   const buySkin = useCallback((skin: number) => {
     const before = profileRef.current;
@@ -206,10 +260,11 @@ export default function App() {
 
       {screen === "playing" && (
         <GameStage
-          key={`level-${selectedLevel}`}
+          key={`level-${selectedLevel}-${profile.character}`}
           level={selectedLevel}
+          character={profile.character}
           vehicle={profile.vehicle}
-          upgrades={profile.upgrades}
+          upgrades={gameUpgrades}
           skin={profile.skin}
           soundOn={profile.soundOn}
           onExit={() => setScreen("menu")}
@@ -222,7 +277,7 @@ export default function App() {
         <ScrollView contentContainerStyle={styles.menuScroll} showsVerticalScrollIndicator={false}>
           <View style={styles.menu}>
             <View style={styles.topline}>
-              <View style={styles.brandChip}><Text style={styles.brandIcon}>✦</Text><Text style={styles.brandText}>MASAL  /  MACERA</Text></View>
+              <View style={styles.brandChip}><Text style={styles.brandIcon}>✦</Text><Text style={styles.brandText}>SARAYA YOLCULUK  /  ROYAL QUEST</Text></View>
               <Pressable onPress={() => setScreen("settings")} style={styles.settingsIcon} accessibilityLabel="Ayarlar">
                 <Text style={styles.settingsIconText}>⚙</Text>
               </Pressable>
@@ -232,10 +287,14 @@ export default function App() {
               <Text style={styles.heroTitle}>SARAYA{"\n"}<Text style={styles.heroTitleEm}>YOLCULUK</Text></Text>
               <Text style={styles.heroCopy}>Tuzakları aş. Altınları topla.{"\n"}Sarayın yolunu bul.</Text>
               <View style={styles.heroArt}>
-                <RoyalStoryArt knightColor={SKIN_SWATCHES[profile.skin] ?? SKIN_SWATCHES[0]} />
+                <RoyalStoryArt
+                  knightColor={SKIN_SWATCHES[profile.skin] ?? SKIN_SWATCHES[0]}
+                  character={profile.character}
+                  vehicle={profile.vehicle}
+                />
                 <View style={styles.heroArtFrame} />
                 <View style={styles.heroArtCaption}>
-                  <Text style={styles.heroArtCaptionText}>MASAL KİTABI · I</Text>
+                  <Text style={styles.heroArtCaptionText}>{getCharacterSpec(profile.character).name.toLocaleUpperCase("tr-TR")}</Text>
                   <Text style={styles.heroArtCaptionText}>GECE YOLU</Text>
                 </View>
               </View>
@@ -244,6 +303,18 @@ export default function App() {
                 <View style={styles.chapterRule} />
                 <Text style={styles.chapterNumber}>BÖLÜM {profile.unlockedLevel}</Text>
               </View>
+              <Pressable
+                onPress={() => setScreen("shop")}
+                style={({ pressed }) => [styles.heroCharacterButton, pressed && styles.pressed]}
+                accessibilityLabel={`${getCharacterSpec(profile.character).name} karakterini değiştir veya geliştir`}
+              >
+                <View style={styles.heroCharacterSeal}><Text style={styles.heroCharacterSealText}>✦</Text></View>
+                <View style={styles.heroCharacterInfo}>
+                  <Text style={styles.heroCharacterLabel}>YOL ARKADAŞIN</Text>
+                  <Text style={styles.heroCharacterName}>{getCharacterSpec(profile.character).name}</Text>
+                </View>
+                <Text style={styles.heroCharacterAction}>DEĞİŞTİR  →</Text>
+              </Pressable>
             </View>
             <View style={styles.walletRow}>
               <View style={styles.walletCard}><Text style={styles.walletIconGold}>●</Text><View><Text style={styles.walletNumber}>{profile.gold}</Text><Text style={styles.walletLabel}>ALTIN</Text></View></View>
@@ -259,6 +330,9 @@ export default function App() {
             </View>
             <View style={styles.tip}><Text style={styles.tipIcon}>✦</Text><Text style={styles.tipText}>İPUCU  ·  ÇİFT ZIPLAMA VE ATILMA YETENEKLERİNİ DÜKKANDAN AÇ.</Text></View>
             <Text style={styles.footer}>KÜÇÜK BİR KAHRAMANIN BÜYÜK YOLCULUĞU</Text>
+            <View style={styles.copyright}>
+              <Text style={styles.copyrightText}>Tüm hakları saklıdır. Muhammed Emin Türkoğlu tarafından tasarlanmıştır.</Text>
+            </View>
           </View>
         </ScrollView>
       )}
@@ -270,6 +344,8 @@ export default function App() {
           onBuyUpgrade={buyUpgrade}
           onBuySkin={buySkin}
           onSelectVehicle={selectVehicle}
+          onSelectCharacter={selectCharacter}
+          onBuyCharacterUpgrade={buyCharacterUpgrade}
         />
       )}
 
@@ -435,7 +511,7 @@ function ResultScreen({ complete, level, rewards, nextLevel, onNext, onMenu, onS
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#0b1422", alignItems: "stretch" },
+  root: { flex: 1, backgroundColor: "#091321", alignItems: "stretch" },
   loading: { flex: 1, justifyContent: "center", alignItems: "center" },
   brandMark: { color: "#f3cc6b", fontSize: 36 },
   loadingText: { color: "#9eafc1", fontSize: 10, fontWeight: "900", letterSpacing: 2, marginTop: 12 },
@@ -443,26 +519,33 @@ const styles = StyleSheet.create({
   storageBannerText: { flex: 1, color: "#fff0d1", fontSize: 11, fontWeight: "700" },
   dismiss: { color: "#fff0d1", fontSize: 20, paddingHorizontal: 6 },
   menuScroll: { flexGrow: 1, justifyContent: "flex-start", paddingVertical: 10 },
-  menu: { width: "100%", maxWidth: 540, alignSelf: "center", flexGrow: 1, paddingHorizontal: 20, paddingBottom: 14 },
-  topline: { height: 42, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  brandChip: { flexDirection: "row", gap: 7, alignItems: "center", borderRadius: 99, paddingVertical: 7, paddingHorizontal: 11, backgroundColor: "#1b2939", borderWidth: 1, borderColor: "#665442" },
+  menu: { width: "100%", maxWidth: 580, alignSelf: "center", flexGrow: 1, paddingHorizontal: 20, paddingBottom: 16 },
+  topline: { height: 44, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  brandChip: { flexDirection: "row", gap: 7, alignItems: "center", borderRadius: 99, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: "#17273a", borderWidth: 1, borderColor: "#8f7652" },
   brandIcon: { color: "#e6c47e", fontSize: 13 },
-  brandText: { color: "#c7c0b7", fontSize: 8, fontWeight: "900", letterSpacing: 1.15 },
-  settingsIcon: { width: 36, height: 36, alignItems: "center", justifyContent: "center", borderRadius: 12, backgroundColor: "#1b2939", borderWidth: 1, borderColor: "#665442" },
+  brandText: { color: "#d5c8ad", fontSize: 8, fontWeight: "900", letterSpacing: 1.05 },
+  settingsIcon: { width: 38, height: 38, alignItems: "center", justifyContent: "center", borderRadius: 13, backgroundColor: "#17273a", borderWidth: 1, borderColor: "#665442" },
   settingsIconText: { color: "#e4d5ba", fontSize: 16 },
-  hero: { marginTop: 14, paddingHorizontal: 2 },
-  heroEyebrow: { color: "#e2bd78", fontWeight: "900", fontSize: 8, letterSpacing: 2 },
-  heroTitle: { color: "#f5ead7", fontFamily: "serif", fontWeight: "700", fontSize: 42, lineHeight: 43, letterSpacing: 0.7, marginTop: 7 },
-  heroTitleEm: { color: "#d5bd8d", fontFamily: "serif", fontWeight: "600", fontSize: 38, fontStyle: "italic", letterSpacing: 1.4 },
-  heroCopy: { color: "#b5b7be", fontSize: 13, lineHeight: 19, marginTop: 7 },
-  heroArt: { height: 210, marginTop: 13, borderRadius: 20, backgroundColor: "#172638", borderWidth: 1, borderColor: "#9a7957", overflow: "hidden", elevation: 5 },
+  hero: { marginTop: 17, paddingHorizontal: 2 },
+  heroEyebrow: { color: "#e2bd78", fontWeight: "900", fontSize: 8, letterSpacing: 2.1 },
+  heroTitle: { color: "#f5ead7", fontFamily: "serif", fontWeight: "700", fontSize: 43, lineHeight: 44, letterSpacing: 0.8, marginTop: 8 },
+  heroTitleEm: { color: "#e1c792", fontFamily: "serif", fontWeight: "600", fontSize: 38, fontStyle: "italic", letterSpacing: 1.5 },
+  heroCopy: { color: "#c2c3c6", fontSize: 13, lineHeight: 19, marginTop: 8 },
+  heroArt: { height: 220, marginTop: 14, borderRadius: 20, backgroundColor: "#172638", borderWidth: 1, borderColor: "#c2a46d", overflow: "hidden", elevation: 9 },
   heroArtFrame: { ...StyleSheet.absoluteFill, margin: 5, borderRadius: 15, borderWidth: 1, borderColor: "rgba(245,224,184,0.22)", pointerEvents: "none" },
   heroArtCaption: { position: "absolute", left: 12, right: 12, bottom: 11, flexDirection: "row", justifyContent: "space-between" },
   heroArtCaptionText: { color: "rgba(248,232,205,0.76)", fontSize: 6, fontWeight: "900", letterSpacing: 0.8 },
-  chapterRow: { flexDirection: "row", alignItems: "center", gap: 9, marginTop: 10, marginBottom: 9, paddingHorizontal: 2 },
+  chapterRow: { flexDirection: "row", alignItems: "center", gap: 9, marginTop: 10, marginBottom: 8, paddingHorizontal: 2 },
   chapterLabel: { color: "#888f89", fontSize: 7, fontWeight: "900", letterSpacing: 1.25 },
   chapterRule: { width: 19, height: 1, backgroundColor: "rgba(195,170,116,0.55)" },
   chapterNumber: { color: "#d2bc8b", fontSize: 8, fontWeight: "900", letterSpacing: 1 },
+  heroCharacterButton: { minHeight: 46, flexDirection: "row", alignItems: "center", paddingHorizontal: 10, borderRadius: 14, backgroundColor: "rgba(20, 37, 54, 0.94)", borderWidth: 1, borderColor: "#4f5a5c" },
+  heroCharacterSeal: { width: 29, height: 29, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: "#303a43", borderWidth: 1, borderColor: "#b99a61" },
+  heroCharacterSealText: { color: "#e9cb89", fontSize: 15, fontWeight: "900" },
+  heroCharacterInfo: { marginLeft: 9 },
+  heroCharacterLabel: { color: "#939da5", fontSize: 7, fontWeight: "900", letterSpacing: 1 },
+  heroCharacterName: { color: "#f2eadb", fontSize: 11, fontWeight: "900", marginTop: 2 },
+  heroCharacterAction: { marginLeft: "auto", color: "#e6ca8a", fontSize: 8, fontWeight: "900", letterSpacing: 0.6 },
   walletRow: { flexDirection: "row", gap: 7, marginTop: 11 },
   walletCard: { flex: 1, minHeight: 54, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 14, backgroundColor: "#1a293a", borderWidth: 1, borderColor: "#4d4a43" },
   walletIconGold: { color: "#ffd75e", fontSize: 17 },
@@ -470,8 +553,8 @@ const styles = StyleSheet.create({
   walletIconLevel: { color: "#d4c08c", fontSize: 16 },
   walletNumber: { color: "#f1f4f6", fontSize: 15, fontWeight: "900" },
   walletLabel: { color: "#a39c91", fontSize: 7, fontWeight: "900", letterSpacing: 0.8, marginTop: 1 },
-  primaryButton: { minHeight: 53, marginTop: 12, paddingHorizontal: 17, borderRadius: 15, backgroundColor: "#b87950", borderWidth: 1, borderColor: "#e2c17f", flexDirection: "row", alignItems: "center", justifyContent: "center", elevation: 3 },
-  primaryButtonText: { color: "#fff3dd", fontSize: 11, fontWeight: "900", letterSpacing: 1.1 },
+  primaryButton: { minHeight: 55, marginTop: 13, paddingHorizontal: 17, borderRadius: 15, backgroundColor: "#aa6d4b", borderWidth: 1, borderColor: "#f0d38e", flexDirection: "row", alignItems: "center", justifyContent: "center", elevation: 5 },
+  primaryButtonText: { color: "#fff4df", fontSize: 11, fontWeight: "900", letterSpacing: 1.2 },
   primaryArrow: { position: "absolute", right: 17, color: "#fff2d7", fontSize: 20, fontWeight: "700" },
   pressed: { opacity: 0.78, transform: [{ scale: 0.99 }] },
   secondaryRow: { flexDirection: "row", gap: 8, marginTop: 8 },
@@ -482,7 +565,9 @@ const styles = StyleSheet.create({
   tip: { flexDirection: "row", gap: 8, alignItems: "center", paddingHorizontal: 12, paddingVertical: 10, marginTop: 10, borderRadius: 12, backgroundColor: "#202d36", borderWidth: 1, borderColor: "#414b4a" },
   tipIcon: { color: "#e7ca8c", fontSize: 13 },
   tipText: { flex: 1, color: "#c0bdba", fontSize: 8, fontWeight: "800", letterSpacing: 0.4, lineHeight: 13 },
-  footer: { color: "#777f87", fontSize: 7, fontWeight: "900", letterSpacing: 1.6, textAlign: "center", marginTop: "auto", paddingTop: 12 },
+  footer: { color: "#99958c", fontSize: 7, fontWeight: "900", letterSpacing: 1.5, textAlign: "center", marginTop: "auto", paddingTop: 13 },
+  copyright: { alignItems: "center", marginTop: 7, paddingTop: 8, borderTopWidth: 1, borderTopColor: "rgba(212, 190, 150, 0.15)" },
+  copyrightText: { color: "#77828d", fontSize: 8, lineHeight: 13, textAlign: "center", letterSpacing: 0.1 },
   subScreen: { flex: 1, width: "100%", maxWidth: 620, alignSelf: "center" },
   subHeader: { alignItems: "center", paddingTop: 20, paddingBottom: 12 },
   subBack: { position: "absolute", left: 16, top: 19, backgroundColor: "#202c3d", borderRadius: 11, paddingVertical: 8, paddingHorizontal: 11, borderWidth: 1, borderColor: "#514b43" },

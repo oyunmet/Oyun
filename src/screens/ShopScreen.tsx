@@ -1,7 +1,14 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { PlayerProfile, UpgradeKey, VehicleId } from "../storage/profile";
+import { CharacterAttribute, CharacterId, PlayerProfile, UpgradeKey, VehicleId } from "../storage/profile";
 import { canAfford, itemCost, SHOP_ITEMS } from "../game/shop";
 import { VEHICLES } from "../game/vehicles";
+import {
+  CHARACTER_ATTRIBUTES,
+  CHARACTER_UPGRADE_MAX_LEVEL,
+  CHARACTERS,
+  characterUpgradeCost,
+  getCharacterSpec,
+} from "../game/characters";
 import VehicleSprite from "../components/VehicleSprite";
 
 const SKINS = ["#3b82f6", "#ef5b59", "#55bd87", "#d28d45", "#b57be0", "#ec7eaa"];
@@ -12,9 +19,20 @@ type Props = {
   onBuyUpgrade: (key: UpgradeKey) => void;
   onBuySkin: (skin: number) => void;
   onSelectVehicle: (vehicle: VehicleId) => void;
+  onSelectCharacter: (character: CharacterId) => void;
+  onBuyCharacterUpgrade: (character: CharacterId, attribute: CharacterAttribute) => void;
 };
 
-export default function ShopScreen({ profile, onBack, onBuyUpgrade, onBuySkin, onSelectVehicle }: Props) {
+export default function ShopScreen({
+  profile,
+  onBack,
+  onBuyUpgrade,
+  onBuySkin,
+  onSelectVehicle,
+  onSelectCharacter,
+  onBuyCharacterUpgrade,
+}: Props) {
+  const selectedCharacter = getCharacterSpec(profile.character);
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
@@ -30,6 +48,121 @@ export default function ShopScreen({ profile, onBack, onBuyUpgrade, onBuySkin, o
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.sectionHeading}>
+          <Text style={styles.sectionTitle}>KAHRAMANLAR</Text>
+          <Text style={styles.sectionCopy}>Kendi kahramanını seç; her birinin yeteneklerini ayrı ayrı geliştir.</Text>
+        </View>
+        <ScrollView horizontal contentContainerStyle={styles.characterRail} showsHorizontalScrollIndicator={false}>
+          {CHARACTERS.map((character) => {
+            const owned = profile.charactersOwned.includes(character.id);
+            const selected = profile.character === character.id;
+            const enough = profile.gold >= character.price;
+            return (
+              <View key={character.id} style={[styles.characterCard, selected && styles.selectedCharacterCard]}>
+                <View style={styles.characterPreview}>
+                  <VehicleSprite
+                    vehicle="bike"
+                    character={character.id}
+                    riderColor={character.color}
+                    width={118}
+                    height={86}
+                  />
+                </View>
+                <Text style={styles.characterName}>{character.name}</Text>
+                <Text style={[styles.characterTitle, { color: character.accent }]}>{character.title}</Text>
+                <Text style={styles.characterDescription}>{character.description}</Text>
+                <Pressable
+                  onPress={() => onSelectCharacter(character.id)}
+                  disabled={!owned && !enough}
+                  style={({ pressed }) => [
+                    styles.characterButton,
+                    selected && styles.selectedCharacterButton,
+                    !owned && !enough && styles.poorButton,
+                    pressed && styles.pressed,
+                  ]}
+                  accessibilityLabel={
+                    selected
+                      ? `${character.name} seçili`
+                      : owned
+                        ? `${character.name} karakterini seç`
+                        : `${character.name} karakterini ${character.price} altına satın al`
+                  }
+                >
+                  <Text style={[styles.characterButtonText, !owned && !enough && styles.dimText]}>
+                    {selected ? "SEÇİLİ" : owned ? "KARAKTERİ SEÇ" : `● ${character.price} ALTIN`}
+                  </Text>
+                </Pressable>
+              </View>
+            );
+          })}
+        </ScrollView>
+
+        <View style={styles.characterUpgradePanel}>
+          <View style={styles.characterUpgradeHeading}>
+            <View>
+              <Text style={styles.sectionTitle}>{selectedCharacter.name.toLocaleUpperCase("tr-TR")} · YETENEKLER</Text>
+              <Text style={styles.sectionCopy}>Bu ilerleme yalnızca seçili karaktere uygulanır.</Text>
+            </View>
+            <View style={[styles.characterBadge, { borderColor: selectedCharacter.accent }]}>
+              <Text style={[styles.characterBadgeText, { color: selectedCharacter.accent }]}>✦</Text>
+            </View>
+          </View>
+          <View style={styles.characterStatGrid}>
+            {CHARACTER_ATTRIBUTES.map((attribute) => {
+              const current = profile.characterUpgrades[profile.character][attribute.key];
+              const bonus = selectedCharacter.bonus[attribute.key] ?? 0;
+              const maxed = current >= CHARACTER_UPGRADE_MAX_LEVEL;
+              const cost = characterUpgradeCost(attribute.key, current);
+              const enough = profile.gold >= cost;
+              return (
+                <View key={attribute.key} style={styles.characterStatCard}>
+                  <View style={styles.characterStatTop}>
+                    <Text style={styles.characterStatName}>{attribute.title}</Text>
+                    <Text style={styles.characterStatLevel}>
+                      {Math.min(CHARACTER_UPGRADE_MAX_LEVEL, current + bonus)}/{CHARACTER_UPGRADE_MAX_LEVEL}
+                    </Text>
+                  </View>
+                  <Text style={styles.characterStatDetail}>
+                    {attribute.detail}{bonus > 0 ? `  ·  Başlangıç +${bonus}` : ""}
+                  </Text>
+                  <View style={styles.levelTrack}>
+                    {Array.from({ length: CHARACTER_UPGRADE_MAX_LEVEL }, (_, index) => (
+                      <View
+                        key={index}
+                        style={[
+                          styles.levelSegment,
+                          index < current + bonus && [
+                            styles.levelSegmentActive,
+                            { backgroundColor: selectedCharacter.accent },
+                          ],
+                        ]}
+                      />
+                    ))}
+                  </View>
+                  <Pressable
+                    onPress={() => onBuyCharacterUpgrade(profile.character, attribute.key)}
+                    disabled={maxed || !enough}
+                    style={({ pressed }) => [
+                      styles.statBuyButton,
+                      (maxed || !enough) && styles.poorButton,
+                      pressed && styles.pressed,
+                    ]}
+                    accessibilityLabel={
+                      maxed
+                        ? `${attribute.title} en yüksek seviyede`
+                        : `${attribute.title} yeteneğini ${cost} altınla geliştir`
+                    }
+                  >
+                    <Text style={[styles.statBuyText, !enough && !maxed && styles.dimText]}>
+                      {maxed ? "EN YÜKSEK SEVİYE" : `GELİŞTİR  ·  ● ${cost}`}
+                    </Text>
+                  </Pressable>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+
         <Text style={styles.sectionTitle}>ARAÇ GARAJI</Text>
         <View style={styles.vehicleGrid}>
           {VEHICLES.map((vehicle) => {
@@ -41,6 +174,7 @@ export default function ShopScreen({ profile, onBack, onBuyUpgrade, onBuySkin, o
                 <View style={styles.vehiclePreview}>
                   <VehicleSprite
                     vehicle={vehicle.id}
+                    character={profile.character}
                     riderColor={SKINS[profile.skin] ?? SKINS[0]}
                     width={112}
                     height={72}
@@ -133,18 +267,45 @@ export default function ShopScreen({ profile, onBack, onBuyUpgrade, onBuySkin, o
 
 const styles = StyleSheet.create({
   screen: { flex: 1, width: "100%", maxWidth: 620, alignSelf: "center" },
-  header: { paddingHorizontal: 18, paddingTop: 12, paddingBottom: 9, alignItems: "center" },
+  header: { paddingHorizontal: 18, paddingTop: 16, paddingBottom: 10, alignItems: "center" },
   backButton: { position: "absolute", left: 16, top: 15, zIndex: 2, paddingVertical: 8, paddingHorizontal: 10, borderRadius: 11, backgroundColor: "#202c3d", borderWidth: 1, borderColor: "#514b43" },
   backText: { color: "#d8e5f2", fontSize: 10, fontWeight: "900" },
   eyebrow: { color: "#dabb7a", fontSize: 9, fontWeight: "900", letterSpacing: 2 },
-  title: { color: "#f5ead7", fontFamily: "serif", fontSize: 29, fontWeight: "700", marginTop: 2 },
+  title: { color: "#f5ead7", fontFamily: "serif", fontSize: 31, fontWeight: "700", marginTop: 2 },
   wallet: { flexDirection: "row", gap: 14, marginTop: 8, paddingVertical: 7, paddingHorizontal: 13, backgroundColor: "#202d3e", borderRadius: 99, borderWidth: 1, borderColor: "#514c44" },
   gold: { color: "#ffd75e", fontSize: 12, fontWeight: "900" },
   gem: { color: "#7ee7ed", fontSize: 12, fontWeight: "900" },
-  content: { padding: 16, paddingBottom: 32 },
-  sectionTitle: { color: "#b2a186", fontSize: 10, letterSpacing: 1.8, fontWeight: "900", marginBottom: 10 },
+  content: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 36 },
+  sectionHeading: { marginBottom: 8 },
+  sectionTitle: { color: "#d8c59f", fontSize: 10, letterSpacing: 1.7, fontWeight: "900", marginBottom: 4 },
+  sectionCopy: { color: "#aeb4bd", fontSize: 9, lineHeight: 14 },
+  characterRail: { gap: 9, paddingBottom: 17, paddingRight: 3 },
+  characterCard: { width: 151, backgroundColor: "#1a293a", borderWidth: 1, borderColor: "#48505a", borderRadius: 17, padding: 9, alignItems: "center" },
+  selectedCharacterCard: { borderColor: "#d7b675", backgroundColor: "#283749" },
+  characterPreview: { height: 87, width: "100%", alignItems: "center", justifyContent: "center", overflow: "hidden", borderRadius: 12, backgroundColor: "#121e2e" },
+  characterName: { color: "#f1e9dc", fontSize: 13, fontWeight: "900", marginTop: 7 },
+  characterTitle: { fontSize: 8, fontWeight: "900", marginTop: 2 },
+  characterDescription: { height: 29, color: "#aeb4bd", fontSize: 8, lineHeight: 12, textAlign: "center", marginTop: 4 },
+  characterButton: { minHeight: 31, width: "100%", marginTop: 8, borderRadius: 10, backgroundColor: "#a96f4d", borderWidth: 1, borderColor: "#d2aa68", alignItems: "center", justifyContent: "center", paddingHorizontal: 4 },
+  selectedCharacterButton: { backgroundColor: "#355448", borderColor: "#6f9876" },
+  characterButtonText: { color: "#fff5dd", fontWeight: "900", fontSize: 8, letterSpacing: 0.2, textAlign: "center" },
+  characterUpgradePanel: { marginBottom: 20, padding: 12, borderRadius: 17, backgroundColor: "#172638", borderWidth: 1, borderColor: "#5b5347" },
+  characterUpgradeHeading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 },
+  characterBadge: { width: 31, height: 31, borderRadius: 11, alignItems: "center", justifyContent: "center", borderWidth: 1, backgroundColor: "#263647" },
+  characterBadgeText: { fontSize: 17, fontWeight: "900" },
+  characterStatGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  characterStatCard: { width: "48%", flexGrow: 1, minWidth: 134, padding: 9, borderRadius: 13, backgroundColor: "#202f40", borderWidth: 1, borderColor: "#46505a" },
+  characterStatTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  characterStatName: { color: "#f1e9dc", fontSize: 11, fontWeight: "900" },
+  characterStatLevel: { color: "#dfc78f", fontSize: 9, fontWeight: "900" },
+  characterStatDetail: { minHeight: 25, color: "#aab2bb", fontSize: 8, lineHeight: 12, marginTop: 3 },
+  levelTrack: { flexDirection: "row", gap: 3, marginTop: 6 },
+  levelSegment: { flex: 1, height: 4, borderRadius: 99, backgroundColor: "#46515d" },
+  levelSegmentActive: { backgroundColor: "#e1bd76" },
+  statBuyButton: { minHeight: 29, marginTop: 8, borderRadius: 9, backgroundColor: "#a96f4d", borderWidth: 1, borderColor: "#d2aa68", alignItems: "center", justifyContent: "center", paddingHorizontal: 4 },
+  statBuyText: { color: "#fff5dd", fontWeight: "900", fontSize: 7, letterSpacing: 0.2, textAlign: "center" },
   vehicleGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 21 },
-  vehicleCard: { flex: 1, minWidth: 96, backgroundColor: "#1d2b3c", borderWidth: 1, borderColor: "#514c44", borderRadius: 15, padding: 8, alignItems: "center" },
+  vehicleCard: { flex: 1, minWidth: 110, backgroundColor: "#1d2b3c", borderWidth: 1, borderColor: "#514c44", borderRadius: 15, padding: 8, alignItems: "center" },
   selectedVehicleCard: { borderColor: "#d7b675", backgroundColor: "#263547" },
   vehiclePreview: { height: 68, width: "100%", alignItems: "center", justifyContent: "center", overflow: "hidden" },
   vehicleName: { color: "#f1e9dc", fontSize: 12, fontWeight: "900", marginTop: 2 },

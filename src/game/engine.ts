@@ -189,7 +189,9 @@ function overlapsX(left: number, width: number, otherLeft: number, otherWidth: n
 
 function hurt(state: GameState, events: GameEvent[], armor: number) {
   if (state.invulnerable > 0 || state.ended) return;
-  state.player.hp = Math.max(0, state.player.hp - (armor > 0 && Math.random() < 0.32 ? 0 : 1));
+  const blockChance = Math.min(0.72, Math.max(0, armor) * 0.13);
+  const blocked = blockChance > 0 && Math.random() < blockChance;
+  state.player.hp = Math.max(0, state.player.hp - (blocked ? 0 : 1));
   state.invulnerable = 1.05;
   state.hitCooldown = 0.55;
   state.player.vy = -165;
