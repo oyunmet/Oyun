@@ -1,3 +1,4 @@
 - [Expo preview in Replit](expo-preview-replit.md) — Disable browser auto-open; React Native DevTools may need native libraries missing from the workspace.
 - [Saraya visual refresh scope](saraya-visual-refresh.md) — Keep visual polish separate from gameplay mechanics and saved player progress.
+- [Saraya mobile controls](saraya-mobile-controls.md) — Movement and jump must work together on touchscreens without triggering text selection or copy menus.
 - [Replit package locks on Vercel](replit-lockfiles-vercel.md) — Replit's npm lockfile may contain internal tarball URLs; deploy externally with a public-registry lockfile.
