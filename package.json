@@ -5,14 +5,18 @@
   "dependencies": {
     "@expo/metro-runtime": "^57.0.16",
     "@react-native-async-storage/async-storage": "^2.2.0",
+    "@react-three/fiber": "^9.8.1",
     "expo": "~57.0.26",
+    "expo-asset": "~57.0.18",
     "expo-audio": "^57.0.5",
+    "expo-gl": "~57.0.2",
     "expo-status-bar": "~57.0.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.3",
     "react-native-svg": "^15.15.4",
-    "react-native-web": "^0.21.3"
+    "react-native-web": "^0.21.3",
+    "three": "^0.186.1"
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
