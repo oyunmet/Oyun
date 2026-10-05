@@ -1,4 +1,5 @@
 import { useId } from "react";
+import { Image } from "react-native";
 import Svg, {
   Circle,
   Defs,
@@ -23,7 +24,16 @@ export default function VehicleSprite({
   height,
 }: Props) {
   const id = `saraya-vehicle-${useId().replace(/:/g, "")}`;
-  const bike = vehicle === "bike";
+  if (vehicle === "bike") {
+    return (
+      <Image
+        source={require("../../assets/saraya-knight-bike.png")}
+        resizeMode="contain"
+        style={{ width, height }}
+        accessible={false}
+      />
+    );
+  }
   const motorcycle = vehicle === "motorcycle";
 
   return (
@@ -32,7 +42,6 @@ export default function VehicleSprite({
       height={height}
       viewBox="0 0 120 82"
       preserveAspectRatio="xMidYMid meet"
-      accessible={false}
     >
       <Defs>
         <LinearGradient id={`${id}-tire`} x1="0" y1="0" x2="1" y2="1">
@@ -61,22 +70,7 @@ export default function VehicleSprite({
         </LinearGradient>
       </Defs>
 
-      <Ellipse cx="60" cy="73.5" rx={bike ? 43 : 48} ry="4.5" fill="#17242c" opacity=".35" />
-
-      {bike && (
-        <G>
-          <Wheel id={id} cx={27} cy={58} />
-          <Wheel id={id} cx={83} cy={58} />
-          <Path d="m27 58 24-27 12 27H27l20-1 13 1 12-29 11 29" fill="none" stroke={`url(#${id}-metal)`} strokeWidth="3.2" strokeLinejoin="round" />
-          <Path d="m27 58 24-27m12 27 12-29m-22 28-4 1 4 1" fill="none" stroke="#e7cc96" strokeWidth="1" opacity=".86" />
-          <Circle cx="51" cy="58" r="4" fill={`url(#${id}-metal)`} stroke="#654d3f" strokeWidth="1.2" />
-          <Path d="m51 58 7 4m-7-4-4-7m3-23h12" fill="none" stroke="#423d40" strokeWidth="3.2" strokeLinecap="round" />
-          <Path d="m70 29 5-5 8 1m-35 0-5-4h-8" fill="none" stroke="#7e5e45" strokeWidth="2.4" strokeLinecap="round" />
-          <Path d="m39 24 6 1m31 0 5-1" stroke="#f0d9a5" strokeWidth="1.1" strokeLinecap="round" />
-          <Path d="m45 53 7 5m-1-4 8 5" stroke="#70543d" strokeWidth="1.5" />
-          <Knight id={id} riderColor={riderColor} seated />
-        </G>
-      )}
+      <Ellipse cx="60" cy="73.5" rx="48" ry="4.5" fill="#17242c" opacity=".35" />
 
       {motorcycle && (
         <G>
@@ -94,7 +88,7 @@ export default function VehicleSprite({
         </G>
       )}
 
-      {!bike && !motorcycle && (
+      {!motorcycle && (
         <G>
           <Wheel id={id} cx={31} cy={59} radius={10.5} />
           <Wheel id={id} cx={79} cy={59} radius={10.5} />

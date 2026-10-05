@@ -24,8 +24,8 @@ export const VEHICLES: VehicleSpec[] = [
     jumpVelocity: 420,
     hitboxWidth: 31,
     hitboxHeight: 29,
-    spriteWidth: 62,
-    spriteHeight: 54,
+    spriteWidth: 82,
+    spriteHeight: 82,
     hpBonus: 0,
   },
   {

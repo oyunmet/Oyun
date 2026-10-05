@@ -9,17 +9,15 @@ import {
   View,
   type ViewStyle,
 } from "react-native";
-import { CastleSprite, HorseSprite, PrincessSprite } from "./GameSprites";
+import { HorseSprite } from "./GameSprites";
 import GameBackdrop from "./GameBackdrop";
+import { GameObstacle, GamePickup, GameTerrain } from "./GameWorldArt";
 import VehicleSprite from "./VehicleSprite";
 import {
   createGameState,
-  GameEvent,
   GameInput,
   GameState,
   GROUND_Y,
-  Obstacle,
-  Pickup,
   SCENE_HEIGHT,
   SCENE_WIDTH,
   stepGame,
@@ -56,85 +54,6 @@ function snapshot(state: GameState): GameState {
     obstacles: state.obstacles.map((obstacle) => ({ ...obstacle })),
     pickups: state.pickups.map((pickup) => ({ ...pickup })),
   };
-}
-
-function obstacleView(obstacle: Obstacle, left: number, scale: number, elapsed: number) {
-  if (obstacle.kind === "pit") {
-    return (
-      <View
-        key={obstacle.id}
-        style={[
-          styles.pit,
-          { left, top: GROUND_Y * scale, width: obstacle.width * scale, height: (SCENE_HEIGHT - GROUND_Y + 8) * scale, pointerEvents: "none" },
-        ]}
-      >
-        <View style={[styles.pitGlow, { height: 4 * scale }]} />
-      </View>
-    );
-  }
-  if (obstacle.kind === "spikes") {
-    return (
-      <View key={obstacle.id} style={{ position: "absolute", left, top: (GROUND_Y - 25) * scale, flexDirection: "row", pointerEvents: "none" }}>
-        <Text style={{ fontSize: 25 * scale, lineHeight: 28 * scale, color: "#f36d64" }}>▲▲</Text>
-      </View>
-    );
-  }
-  if (obstacle.kind === "crate") {
-    return (
-      <View
-        key={obstacle.id}
-        style={[
-          styles.crate,
-          { left, top: (GROUND_Y - 30) * scale, width: obstacle.width * scale, height: 30 * scale, pointerEvents: "none" },
-        ]}
-      >
-        <Text style={{ color: "#614024", fontSize: 16 * scale, fontWeight: "900" }}>╳</Text>
-      </View>
-    );
-  }
-  if (obstacle.kind === "platform") {
-    if (obstacle.broken) return null;
-    return (
-      <View
-        key={obstacle.id}
-        style={[
-          styles.platform,
-          {
-            left,
-            top: (obstacle.y ?? GROUND_Y - 56) * scale,
-            width: obstacle.width * scale,
-            height: 9 * scale,
-            opacity: obstacle.breakingFor ? 0.62 : 1,
-            pointerEvents: "none",
-          },
-        ]}
-      />
-    );
-  }
-  const swing = Math.sin(elapsed * 4 + obstacle.x) * 30;
-  return (
-    <View key={obstacle.id} style={{ position: "absolute", left: left + obstacle.width * scale / 2 - 2 * scale, top: (GROUND_Y - 115) * scale, pointerEvents: "none" }}>
-      <View style={[styles.chain, { height: 42 * scale }]} />
-      <View style={[styles.axe, { transform: [{ rotate: `${swing}deg` }], width: 22 * scale, height: 22 * scale }]} />
-    </View>
-  );
-}
-
-function PickupSprite({ pickup, left, scale }: { pickup: Pickup; left: number; scale: number }) {
-  if (pickup.collected) return null;
-  const glyph = pickup.kind === "gold" ? "●" : pickup.kind === "gem" ? "◆" : "♥";
-  const color = pickup.kind === "gold" ? "#ffd75e" : pickup.kind === "gem" ? "#7ee7ed" : "#ff6f79";
-  return (
-    <View
-      key={pickup.id}
-      style={[
-        styles.pickup,
-        { left: left - 9 * scale, top: (pickup.y - 9) * scale, width: 18 * scale, height: 18 * scale, borderColor: color, pointerEvents: "none" },
-      ]}
-    >
-      <Text style={{ color, fontSize: 11 * scale, fontWeight: "900" }}>{glyph}</Text>
-    </View>
-  );
 }
 
 export default function GameStage({ level, vehicle, upgrades, skin, soundOn, onExit, onComplete, onGameOver }: Props) {
@@ -209,8 +128,8 @@ export default function GameStage({ level, vehicle, upgrades, skin, soundOn, onE
           onGameOver({ gold: Math.floor(stateRef.current.gold * 0.6), gems: stateRef.current.gems });
         }
       }
-      if (Math.floor(now / 45) !== frameRef.current && !stateRef.current.ended) {
-        frameRef.current = Math.floor(now / 45);
+      if (Math.floor(now / (1000 / 60)) !== frameRef.current && !stateRef.current.ended) {
+        frameRef.current = Math.floor(now / (1000 / 60));
         setViewState(snapshot(stateRef.current));
       }
       if (!stateRef.current.ended) requestAnimationFrame(loop);
@@ -369,25 +288,24 @@ export default function GameStage({ level, vehicle, upgrades, skin, soundOn, onE
           <View pointerEvents="none" style={StyleSheet.absoluteFill}>
             <GameBackdrop cameraX={cameraX} elapsed={viewState.elapsed} level={level} />
           </View>
-          <View style={[styles.cloud, { left: 48 * scale, top: 62 * scale, transform: [{ scale: scale }] }]}>
-            <View style={styles.cloudPuffLeft} /><View style={styles.cloudPuffTop} /><View style={styles.cloudPuffRight} />
-          </View>
-          <View style={[styles.cloud, { left: 234 * scale, top: 42 * scale, transform: [{ scale: scale * 0.75 }] }]}>
-            <View style={styles.cloudPuffLeft} /><View style={styles.cloudPuffTop} /><View style={styles.cloudPuffRight} />
-          </View>
-          <View style={[styles.castle, { left: (viewState.length - 104 - cameraX) * scale, top: (GROUND_Y - 70) * scale }]}>
-            <CastleSprite size={58 * scale} />
-          </View>
-          <View style={[styles.princess, { left: (viewState.length - 58 - cameraX) * scale, top: (GROUND_Y - 39) * scale }]}>
-            <PrincessSprite size={24 * scale} />
-          </View>
-
-          <View style={[styles.ground, { top: GROUND_Y * scale, height: (SCENE_HEIGHT - GROUND_Y) * scale }]} />
+            <GameTerrain scale={scale} />
           {liveObstacles.map((obstacle) =>
-            obstacleView(obstacle, (obstacle.x - cameraX) * scale, scale, viewState.elapsed),
+            <GameObstacle
+              key={obstacle.id}
+              obstacle={obstacle}
+              left={(obstacle.x - cameraX) * scale}
+              scale={scale}
+              elapsed={viewState.elapsed}
+            />,
           )}
           {livePickups.map((pickup) =>
-            <PickupSprite key={pickup.id} pickup={pickup} left={(pickup.x - cameraX) * scale} scale={scale} />,
+            <GamePickup
+              key={pickup.id}
+              pickup={pickup}
+              centerX={(pickup.x - cameraX) * scale}
+              scale={scale}
+              elapsed={viewState.elapsed}
+            />,
           )}
           <View
             pointerEvents="none"
@@ -399,7 +317,10 @@ export default function GameStage({ level, vehicle, upgrades, skin, soundOn, onE
                 width: vehicleSpec.spriteWidth * scale,
                 height: vehicleSpec.spriteHeight * scale,
                 opacity: viewState.invulnerable > 0 ? 0.58 : 1,
-                transform: [{ scaleX: viewState.dashTime > 0 ? 1.08 : 1 }],
+                transform: [
+                  { translateY: Math.sin(viewState.elapsed * 11) * 0.55 * scale },
+                  { scaleX: viewState.player.direction * (viewState.dashTime > 0 ? 1.08 : 1) },
+                ],
               },
             ]}
           >
@@ -496,22 +417,8 @@ const styles = StyleSheet.create({
   miniCurrency: { flexDirection: "row", gap: 9, alignItems: "center" },
   miniGold: { color: "#ffd75e", fontWeight: "900", fontSize: 12 },
   miniGem: { color: "#7ee7ed", fontWeight: "900", fontSize: 12 },
-  stage: { width: "100%", maxWidth: 520, alignSelf: "center", aspectRatio: SCENE_WIDTH / SCENE_HEIGHT, borderWidth: 2, borderRadius: 18, borderColor: "#9b805e", overflow: "hidden", backgroundColor: "#182638" },
-  sky: { width: "100%", backgroundColor: "#243446", overflow: "hidden" },
-  cloud: { position: "absolute", width: 42, height: 17 },
-  cloudPuffLeft: { position: "absolute", left: 3, bottom: 0, width: 21, height: 11, borderRadius: 99, backgroundColor: "rgba(236,223,196,0.5)" },
-  cloudPuffTop: { position: "absolute", left: 13, top: 0, width: 17, height: 15, borderRadius: 99, backgroundColor: "rgba(236,223,196,0.58)" },
-  cloudPuffRight: { position: "absolute", right: 2, bottom: 0, width: 20, height: 10, borderRadius: 99, backgroundColor: "rgba(236,223,196,0.48)" },
-  castle: { position: "absolute" },
-  princess: { position: "absolute" },
-  ground: { position: "absolute", left: 0, right: 0, backgroundColor: "#354e47", borderTopWidth: 5, borderTopColor: "#b3a06c" },
-  pit: { position: "absolute", backgroundColor: "#09111c", borderLeftWidth: 2, borderRightWidth: 2, borderColor: "#141b27" },
-  pitGlow: { backgroundColor: "#d15b47" },
-  crate: { position: "absolute", alignItems: "center", justifyContent: "center", backgroundColor: "#927052", borderWidth: 3, borderColor: "#57423b", borderRadius: 5 },
-  platform: { position: "absolute", backgroundColor: "#88714f", borderTopWidth: 3, borderColor: "#d7b876", borderRadius: 4 },
-  chain: { width: 3, alignSelf: "center", backgroundColor: "#afa58f" },
-  axe: { backgroundColor: "#c6c9bf", borderRadius: 3, borderWidth: 3, borderColor: "#727c7c", marginLeft: -10 },
-  pickup: { position: "absolute", borderWidth: 2, borderRadius: 99, backgroundColor: "#18283d", alignItems: "center", justifyContent: "center" },
+  stage: { width: "100%", maxWidth: 520, alignSelf: "center", aspectRatio: SCENE_WIDTH / SCENE_HEIGHT, borderWidth: 2, borderRadius: 18, borderColor: "#c7aa73", overflow: "hidden", backgroundColor: "#14223a", boxShadow: "0px 12px 18px rgba(5, 10, 20, 0.4)" },
+  sky: { width: "100%", backgroundColor: "#14223a", overflow: "hidden" },
   vehicleSprite: { position: "absolute", zIndex: 4, alignItems: "center", justifyContent: "center" },
   cinematicCover: { ...StyleSheet.absoluteFill, backgroundColor: "rgba(10,16,28,0.48)", alignItems: "center", justifyContent: "center", zIndex: 8 },
   cinematicTitle: { color: "#fff0c8", fontFamily: "serif", fontSize: 17, fontWeight: "700", letterSpacing: 1, marginBottom: 35 },
