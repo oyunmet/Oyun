@@ -13,7 +13,6 @@ import { HorseSprite } from "./GameSprites";
 import GameBackdrop from "./GameBackdrop";
 import { GameObstacle, GamePickup, GameTerrain } from "./GameWorldArt";
 import VehicleSprite from "./VehicleSprite";
-import GameScene3D from "./GameScene3D";
 import {
   createGameState,
   GameInput,
@@ -321,18 +320,8 @@ export default function GameStage({ level, character, vehicle, vehicleModel, bac
           <View style={[StyleSheet.absoluteFill, { pointerEvents: "none" }]}>
             <GameBackdrop cameraX={cameraX} elapsed={viewState.elapsed} level={level} theme={backgroundId} />
           </View>
-          {Platform.OS !== "web" && <GameTerrain scale={scale} theme={backgroundId} />}
-          <GameScene3D
-            state={viewState}
-            cameraX={cameraX}
-            character={character}
-            vehicle={vehicle}
-            vehicleModel={vehicleModel}
-            riderColor={tint}
-            scale={scale}
-            backgroundId={backgroundId}
-          />
-          {Platform.OS !== "web" && liveObstacles.map((obstacle) =>
+          <GameTerrain scale={scale} theme={backgroundId} />
+          {liveObstacles.map((obstacle) =>
             <GameObstacle
               key={obstacle.id}
               obstacle={obstacle}
@@ -341,7 +330,7 @@ export default function GameStage({ level, character, vehicle, vehicleModel, bac
               elapsed={viewState.elapsed}
             />,
           )}
-          {Platform.OS !== "web" && livePickups.map((pickup) =>
+          {livePickups.map((pickup) =>
             <GamePickup
               key={pickup.id}
               pickup={pickup}
@@ -350,7 +339,7 @@ export default function GameStage({ level, character, vehicle, vehicleModel, bac
               elapsed={viewState.elapsed}
             />,
           )}
-          {Platform.OS !== "web" && <View
+          <View
             style={[
               styles.vehicleSprite,
               { pointerEvents: "none" },
@@ -378,7 +367,7 @@ export default function GameStage({ level, character, vehicle, vehicleModel, bac
               elapsed={viewState.elapsed}
               wheelRotation={((viewState.player.x - 34) / (vehicle === "car" ? 10.5 : 14)) * (180 / Math.PI)}
             />
-          </View>}
+          </View>
           {cinematic && (
             <View style={styles.cinematicCover}>
               <Text style={styles.cinematicTitle}>ATLI PRENSESİ KAÇIRDI!</Text>

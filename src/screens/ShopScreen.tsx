@@ -169,11 +169,11 @@ export default function ShopScreen({
         </View>
 
         <Text style={styles.sectionTitle}>ARAÇ GARAJI</Text>
-        <Text style={styles.sectionCopy}>Bir model seç; kahramanını araçla birlikte canlı 3D olarak incele.</Text>
+        <Text style={styles.sectionCopy}>Bir model seç; kahramanını araçla birlikte görüntüle.</Text>
         <View style={styles.liveGaragePanel}>
           <View style={styles.liveGarageHeading}>
             <View>
-              <Text style={styles.liveGarageEyebrow}>SARAY GARAJI · 3D ÖNİZLEME</Text>
+              <Text style={styles.liveGarageEyebrow}>SARAY GARAJI · KARAKTER VE ARAÇ</Text>
               <Text style={styles.liveGarageName}>
                 {VEHICLE_MODELS.find((model) => model.id === profile.vehicleModel)?.name ?? "Saray Bisikleti"}
               </Text>

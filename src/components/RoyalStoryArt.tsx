@@ -13,7 +13,7 @@ type Props = {
 
 export default function RoyalStoryArt({ knightColor, character, vehicle, vehicleModel, backgroundId }: Props) {
   return (
-    <View style={styles.scene} accessibilityLabel="Ay ışığında saraya uzanan üç boyutlu krallık yolu">
+    <View style={styles.scene} accessibilityLabel="Ay ışığında saraya uzanan yolda şövalye">
       <Image
         source={WORLD_ART[backgroundId]}
         resizeMode="cover"
