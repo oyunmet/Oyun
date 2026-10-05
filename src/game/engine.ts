@@ -36,6 +36,7 @@ export type GameState = {
   elapsed: number;
   player: {
     x: number;
+    vx: number;
     y: number;
     vy: number;
     hp: number;
@@ -163,6 +164,7 @@ export function createGameState(
     elapsed: 0,
     player: {
       x: 34,
+      vx: 0,
       y: GROUND_Y - vehicleSpec.hitboxHeight,
       vy: 0,
       hp: maxHp,
@@ -195,6 +197,7 @@ function hurt(state: GameState, events: GameEvent[], armor: number) {
   state.invulnerable = 1.05;
   state.hitCooldown = 0.55;
   state.player.vy = -165;
+  state.player.vx *= 0.35;
   events.push({ type: "hit", hp: state.player.hp });
   if (state.player.hp <= 0) {
     state.ended = true;
@@ -240,9 +243,18 @@ export function stepGame(
 
   const speed = vehicleSpec.speed + upgrades.speed * 17;
   const movingDirection = state.dashTime > 0 ? player.direction : direction;
-  const movementSpeed = state.dashTime > 0 ? speed * 2.15 : speed;
-  player.x += movingDirection * movementSpeed * dt;
-  player.x = Math.max(0, Math.min(state.length - 32, player.x));
+  const targetVelocity = movingDirection * speed * (state.dashTime > 0 ? 2.15 : 1);
+  const acceleration = direction === 0 && state.dashTime <= 0 ? 17 : 11;
+  player.vx += (targetVelocity - player.vx) * Math.min(1, acceleration * dt);
+  if (Math.abs(targetVelocity - player.vx) < 3) player.vx = targetVelocity;
+  player.x += player.vx * dt;
+  if (player.x <= 0) {
+    player.x = 0;
+    player.vx = Math.max(0, player.vx);
+  } else if (player.x >= state.length - 32) {
+    player.x = state.length - 32;
+    player.vx = Math.min(0, player.vx);
+  }
   state.dashTime = Math.max(0, state.dashTime - dt);
 
   const previousBottom = player.y + playerHeight;
@@ -288,6 +300,7 @@ export function stepGame(
           overlapsX(player.x + 4, playerWidth - 8, obstacle.x, obstacle.width),
       );
       player.x = pit ? Math.max(16, pit.x - 32) : Math.max(16, player.x - 45);
+      player.vx = 0;
       player.y = GROUND_Y - playerHeight;
       player.vy = 0;
       player.grounded = true;

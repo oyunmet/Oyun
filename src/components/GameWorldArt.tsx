@@ -11,10 +11,13 @@ import Svg, {
 } from "react-native-svg";
 import { GROUND_Y, SCENE_HEIGHT, SCENE_WIDTH } from "../game/engine";
 import type { Obstacle, Pickup } from "../game/engine";
+import { getBackgroundSpec } from "../game/backgrounds";
+import type { BackgroundId } from "../storage/profile";
 
-export function GameTerrain({ scale }: { scale: number }) {
+export function GameTerrain({ scale, theme }: { scale: number; theme: BackgroundId }) {
   const id = `saraya-terrain-${useId().replace(/:/g, "")}`;
   const terrainHeight = SCENE_HEIGHT - GROUND_Y;
+  const background = getBackgroundSpec(theme);
 
   return (
     <Svg
@@ -26,29 +29,29 @@ export function GameTerrain({ scale }: { scale: number }) {
     >
       <Defs>
         <LinearGradient id={`${id}-meadow`} x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor="#a5a678" />
-          <Stop offset=".12" stopColor="#778765" />
-          <Stop offset=".36" stopColor="#526c54" />
-          <Stop offset="1" stopColor="#263e39" />
+          <Stop offset="0" stopColor={background.ground} />
+          <Stop offset=".12" stopColor={background.nearHill} />
+          <Stop offset=".36" stopColor={background.farHill} />
+          <Stop offset="1" stopColor={background.farHill} />
         </LinearGradient>
         <LinearGradient id={`${id}-soil`} x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor="#62725b" />
-          <Stop offset=".4" stopColor="#405a4b" />
-          <Stop offset="1" stopColor="#203735" />
+          <Stop offset="0" stopColor={background.nearHill} />
+          <Stop offset=".4" stopColor={background.farHill} />
+          <Stop offset="1" stopColor={background.farHill} />
         </LinearGradient>
         <LinearGradient id={`${id}-edge`} x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor="#e4d09b" />
-          <Stop offset=".48" stopColor="#9f9b72" />
-          <Stop offset="1" stopColor="#52614d" />
+          <Stop offset="0" stopColor={background.accent} />
+          <Stop offset=".48" stopColor={background.ground} />
+          <Stop offset="1" stopColor={background.nearHill} />
         </LinearGradient>
       </Defs>
 
       <Rect width={SCENE_WIDTH} height={terrainHeight} fill={`url(#${id}-soil)`} />
       <Path d="M0 0h360v14H0Z" fill={`url(#${id}-edge)`} />
       <Path d="M0 3q46-5 91 0t92 0 91 0 86 0v11H0Z" fill={`url(#${id}-meadow)`} />
-      <Path d="M0 13q58-4 114 1t119-1 127 1" fill="none" stroke="#314b3e" strokeWidth="2" opacity=".8" />
-      <Path d="M0 24q43-5 89 1t94-2 91 2 86-1" fill="none" stroke="#a6a17a" strokeWidth="1.2" opacity=".42" />
-      <Path d="M0 43q56-6 110 2t108-2 142 2" fill="none" stroke="#172f31" strokeWidth="2" opacity=".62" />
+      <Path d="M0 13q58-4 114 1t119-1 127 1" fill="none" stroke={background.farHill} strokeWidth="2" opacity=".8" />
+      <Path d="M0 24q43-5 89 1t94-2 91 2 86-1" fill="none" stroke={background.accent} strokeWidth="1.2" opacity=".5" />
+      <Path d="M0 43q56-6 110 2t108-2 142 2" fill="none" stroke="#fff" strokeWidth="2" opacity=".18" />
 
       <G fill="#203a36" opacity=".64">
         <Path d="m17 29 10-5 12 6-6 3-13-1Z" />

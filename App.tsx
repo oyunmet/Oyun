@@ -21,11 +21,19 @@ import {
   saveProfile,
   CharacterAttribute,
   CharacterId,
+  BackgroundId,
   UpgradeKey,
-  VehicleId,
+  VehicleModelId,
 } from "./src/storage/profile";
 import { purchaseUpgrade, SHOP_ITEMS } from "./src/game/shop";
-import { getVehicleSpec, purchaseVehicle } from "./src/game/vehicles";
+import {
+  getDefaultVehicleModel,
+  getVehicleModelSpec,
+  getVehicleSpec,
+  purchaseVehicle,
+  purchaseVehicleModel,
+} from "./src/game/vehicles";
+import { getBackgroundSpec, purchaseBackground } from "./src/game/backgrounds";
 import {
   getCharacterSpec,
   purchaseCharacter as unlockCharacter,
@@ -43,6 +51,8 @@ export default function App() {
     upgrades: { ...DEFAULT_PROFILE.upgrades },
     skinsOwned: [...DEFAULT_PROFILE.skinsOwned],
     vehiclesOwned: [...DEFAULT_PROFILE.vehiclesOwned],
+    vehicleModelsOwned: [...DEFAULT_PROFILE.vehicleModelsOwned],
+    backgroundsOwned: [...DEFAULT_PROFILE.backgroundsOwned],
     charactersOwned: [...DEFAULT_PROFILE.charactersOwned],
     characterUpgrades: {
       knight: { ...DEFAULT_PROFILE.characterUpgrades.knight },
@@ -185,22 +195,53 @@ export default function App() {
     setToast(`${getCharacterSpec(character).name} açıldı ve seçildi.`);
   }, [commitProfile]);
 
-  const selectVehicle = useCallback((vehicle: VehicleId) => {
+  const selectVehicleModel = useCallback((modelId: VehicleModelId) => {
     const before = profileRef.current;
-    if (before.vehiclesOwned.includes(vehicle)) {
-      commitProfile((current) => ({ ...current, vehicle }));
-      setToast(`${getVehicleSpec(vehicle).name} seçildi.`);
+    const model = getVehicleModelSpec(modelId);
+    if (!before.vehiclesOwned.includes(model.vehicle)) {
+      if (modelId !== getDefaultVehicleModel(model.vehicle)) {
+        setToast(`Önce ${getVehicleSpec(model.vehicle).name.toLocaleLowerCase("tr-TR")} aracını aç.`);
+        return;
+      }
+      const nextVehicle = purchaseVehicle(before, model.vehicle);
+      if (!nextVehicle) {
+        setToast("Bu aracı açmak için yeterli altın yok.");
+        return;
+      }
+      commitProfile(() => nextVehicle);
+      playSound("coin", before.soundOn);
+      setToast(`${model.name} satın alındı ve seçildi.`);
       return;
     }
 
-    const next = purchaseVehicle(before, vehicle);
+    const next = purchaseVehicleModel(before, modelId);
     if (!next) {
-      setToast("Bu araç için yeterli altın yok.");
+      setToast("Bu model için yeterli altın yok.");
       return;
     }
     commitProfile(() => next);
     playSound("coin", before.soundOn);
-    setToast(`${getVehicleSpec(vehicle).name} satın alındı ve seçildi.`);
+    setToast(
+      before.vehicleModelsOwned.includes(modelId)
+        ? `${model.name} seçildi.`
+        : `${model.name} satın alındı ve seçildi.`,
+    );
+  }, [commitProfile]);
+
+  const selectBackground = useCallback((backgroundId: BackgroundId) => {
+    const before = profileRef.current;
+    const next = purchaseBackground(before, backgroundId);
+    if (!next) {
+      setToast("Bu dünyayı açmak için yeterli altın yok.");
+      return;
+    }
+    commitProfile(() => next);
+    if (!before.backgroundsOwned.includes(backgroundId)) playSound("coin", before.soundOn);
+    setToast(
+      before.backgroundsOwned.includes(backgroundId)
+        ? "Oyun dünyası değiştirildi."
+        : "Yeni oyun dünyası açıldı ve seçildi.",
+    );
   }, [commitProfile]);
 
   const characterSpec = getCharacterSpec(profile.character);
@@ -264,6 +305,8 @@ export default function App() {
           level={selectedLevel}
           character={profile.character}
           vehicle={profile.vehicle}
+          vehicleModel={profile.vehicleModel}
+          backgroundId={profile.backgroundId}
           upgrades={gameUpgrades}
           skin={profile.skin}
           soundOn={profile.soundOn}
@@ -291,11 +334,13 @@ export default function App() {
                   knightColor={SKIN_SWATCHES[profile.skin] ?? SKIN_SWATCHES[0]}
                   character={profile.character}
                   vehicle={profile.vehicle}
+                  vehicleModel={profile.vehicleModel}
+                  backgroundId={profile.backgroundId}
                 />
                 <View style={styles.heroArtFrame} />
                 <View style={styles.heroArtCaption}>
                   <Text style={styles.heroArtCaptionText}>{getCharacterSpec(profile.character).name.toLocaleUpperCase("tr-TR")}</Text>
-                  <Text style={styles.heroArtCaptionText}>GECE YOLU</Text>
+                  <Text style={styles.heroArtCaptionText}>{getBackgroundSpec(profile.backgroundId).name.toLocaleUpperCase("tr-TR")}</Text>
                 </View>
               </View>
               <View style={styles.chapterRow}>
@@ -343,7 +388,8 @@ export default function App() {
           onBack={() => setScreen("menu")}
           onBuyUpgrade={buyUpgrade}
           onBuySkin={buySkin}
-          onSelectVehicle={selectVehicle}
+          onSelectVehicleModel={selectVehicleModel}
+          onSelectBackground={selectBackground}
           onSelectCharacter={selectCharacter}
           onBuyCharacterUpgrade={buyCharacterUpgrade}
         />

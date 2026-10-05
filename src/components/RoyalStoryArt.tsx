@@ -1,18 +1,21 @@
 import { Image, StyleSheet, Text, View } from "react-native";
-import type { CharacterId, VehicleId } from "../storage/profile";
+import { WORLD_ART } from "./GameBackdrop";
+import type { BackgroundId, CharacterId, VehicleId, VehicleModelId } from "../storage/profile";
 import VehicleSprite from "./VehicleSprite";
 
 type Props = {
   knightColor: string;
   character: CharacterId;
   vehicle: VehicleId;
+  vehicleModel: VehicleModelId;
+  backgroundId: BackgroundId;
 };
 
-export default function RoyalStoryArt({ knightColor, character, vehicle }: Props) {
+export default function RoyalStoryArt({ knightColor, character, vehicle, vehicleModel, backgroundId }: Props) {
   return (
     <View style={styles.scene} accessibilityLabel="Ay ışığında saraya uzanan üç boyutlu krallık yolu">
       <Image
-        source={require("../../assets/saraya-3d-kingdom.png")}
+        source={WORLD_ART[backgroundId]}
         resizeMode="cover"
         style={styles.sceneBackground}
         accessible={false}
@@ -23,6 +26,7 @@ export default function RoyalStoryArt({ knightColor, character, vehicle }: Props
         <VehicleSprite
           character={character}
           vehicle={vehicle}
+          model={vehicleModel}
           riderColor={knightColor}
           width={188}
           height={168}
@@ -40,7 +44,7 @@ export default function RoyalStoryArt({ knightColor, character, vehicle }: Props
 const styles = StyleSheet.create({
   scene: { flex: 1, width: "100%", height: "100%", overflow: "hidden", justifyContent: "flex-end" },
   sceneBackground: { ...StyleSheet.absoluteFill, width: "100%", height: "100%" },
-  sceneShade: { ...StyleSheet.absoluteFill, pointerEvents: "none", backgroundColor: "rgba(8, 17, 28, 0.2)" },
+  sceneShade: { ...StyleSheet.absoluteFill, pointerEvents: "none", backgroundColor: "rgba(8, 17, 28, 0.06)" },
   knightGlow: {
     position: "absolute",
     left: 19,

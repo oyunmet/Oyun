@@ -24,7 +24,7 @@ import {
 } from "../game/engine";
 import { EngineUpgrades } from "../game/engine";
 import { getVehicleSpec } from "../game/vehicles";
-import { CharacterId, UpgradeKey, VehicleId } from "../storage/profile";
+import { BackgroundId, CharacterId, UpgradeKey, VehicleId, VehicleModelId } from "../storage/profile";
 import { playSound } from "../audio/sounds";
 
 const SKINS = ["#3b82f6", "#ef5b59", "#55bd87", "#d28d45", "#b57be0", "#ec7eaa"];
@@ -40,6 +40,8 @@ type Props = {
   level: number;
   character: CharacterId;
   vehicle: VehicleId;
+  vehicleModel: VehicleModelId;
+  backgroundId: BackgroundId;
   upgrades: Record<UpgradeKey, number>;
   skin: number;
   soundOn: boolean;
@@ -57,7 +59,7 @@ function snapshot(state: GameState): GameState {
   };
 }
 
-export default function GameStage({ level, character, vehicle, upgrades, skin, soundOn, onExit, onComplete, onGameOver }: Props) {
+export default function GameStage({ level, character, vehicle, vehicleModel, backgroundId, upgrades, skin, soundOn, onExit, onComplete, onGameOver }: Props) {
   const input = useRef<GameInput>({ left: false, right: false, jump: false, dash: false });
   const pendingJump = useRef(false);
   const pendingDash = useRef(false);
@@ -291,9 +293,9 @@ export default function GameStage({ level, character, vehicle, upgrades, skin, s
       <View onLayout={measureStage} style={styles.stage}>
         <View style={[styles.sky, { height: SCENE_HEIGHT * scale }]}>
           <View style={[StyleSheet.absoluteFill, { pointerEvents: "none" }]}>
-            <GameBackdrop cameraX={cameraX} elapsed={viewState.elapsed} level={level} />
+            <GameBackdrop cameraX={cameraX} elapsed={viewState.elapsed} level={level} theme={backgroundId} />
           </View>
-            <GameTerrain scale={scale} />
+            <GameTerrain scale={scale} theme={backgroundId} />
           {liveObstacles.map((obstacle) =>
             <GameObstacle
               key={obstacle.id}
@@ -332,11 +334,13 @@ export default function GameStage({ level, character, vehicle, upgrades, skin, s
           >
             <VehicleSprite
               vehicle={vehicle}
+              model={vehicleModel}
               character={character}
               riderColor={tint}
               width={vehicleSpec.spriteWidth * scale}
               height={vehicleSpec.spriteHeight * scale}
               elapsed={viewState.elapsed}
+              wheelRotation={((viewState.player.x - 34) / (vehicle === "car" ? 10.5 : 14)) * (180 / Math.PI)}
             />
           </View>
           {cinematic && (
@@ -417,16 +421,16 @@ export default function GameStage({ level, character, vehicle, upgrades, skin, s
 }
 
 const styles = StyleSheet.create({
-  gamePage: { flex: 1, width: "100%", maxWidth: 560, alignSelf: "center", justifyContent: "center", paddingHorizontal: 14, paddingBottom: 12 },
+  gamePage: { flex: 1, width: "100%", maxWidth: 560, alignSelf: "center", justifyContent: "center", paddingHorizontal: 14, paddingBottom: 12, backgroundColor: "#f4f7fb" },
   gameTop: { height: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  leaveButton: { paddingVertical: 10, paddingHorizontal: 12, backgroundColor: "#202c3d", borderRadius: 12, borderWidth: 1, borderColor: "#514b43" },
-  leaveText: { color: "#dbe8f5", fontWeight: "900", fontSize: 11, letterSpacing: 0.4 },
-  levelLabel: { color: "#e7c77f", fontWeight: "900", fontSize: 12, letterSpacing: 1.3 },
+  leaveButton: { paddingVertical: 10, paddingHorizontal: 12, backgroundColor: "#e6edff", borderRadius: 12, borderWidth: 1, borderColor: "#d1dcf2" },
+  leaveText: { color: "#425779", fontWeight: "900", fontSize: 11, letterSpacing: 0.4 },
+  levelLabel: { color: "#687ba1", fontWeight: "900", fontSize: 12, letterSpacing: 1.3 },
   miniCurrency: { flexDirection: "row", gap: 9, alignItems: "center" },
-  miniGold: { color: "#ffd75e", fontWeight: "900", fontSize: 12 },
-  miniGem: { color: "#7ee7ed", fontWeight: "900", fontSize: 12 },
-  stage: { width: "100%", maxWidth: 520, alignSelf: "center", aspectRatio: SCENE_WIDTH / SCENE_HEIGHT, borderWidth: 2, borderRadius: 18, borderColor: "#c7aa73", overflow: "hidden", backgroundColor: "#14223a", boxShadow: "0px 12px 18px rgba(5, 10, 20, 0.4)" },
-  sky: { width: "100%", backgroundColor: "#14223a", overflow: "hidden" },
+  miniGold: { color: "#d79b1f", fontWeight: "900", fontSize: 12 },
+  miniGem: { color: "#36a7bc", fontWeight: "900", fontSize: 12 },
+  stage: { width: "100%", maxWidth: 520, alignSelf: "center", aspectRatio: SCENE_WIDTH / SCENE_HEIGHT, borderWidth: 2, borderRadius: 18, borderColor: "#a8b5e8", overflow: "hidden", backgroundColor: "#dff1ff", boxShadow: "0px 12px 22px rgba(67, 87, 129, 0.18)" },
+  sky: { width: "100%", backgroundColor: "#dff1ff", overflow: "hidden" },
   vehicleSprite: { position: "absolute", zIndex: 4, alignItems: "center", justifyContent: "center" },
   cinematicCover: { ...StyleSheet.absoluteFill, backgroundColor: "rgba(10,16,28,0.48)", alignItems: "center", justifyContent: "center", zIndex: 8 },
   cinematicTitle: { color: "#fff0c8", fontFamily: "serif", fontSize: 17, fontWeight: "700", letterSpacing: 1, marginBottom: 35 },
@@ -434,20 +438,20 @@ const styles = StyleSheet.create({
   dustPuffs: { flexDirection: "row", alignItems: "center", gap: 4, marginLeft: 5, marginTop: 20 },
   dustPuff: { width: 10, height: 5, borderRadius: 99, backgroundColor: "rgba(240,216,177,0.68)" },
   hud: { position: "absolute", flexDirection: "row", alignItems: "center", gap: 10, zIndex: 6 },
-  hpPill: { backgroundColor: "rgba(9,18,31,0.78)", paddingVertical: 5, paddingHorizontal: 9, borderRadius: 99, borderWidth: 1, borderColor: "#65778a" },
-  hpText: { color: "#ff8990", fontSize: 11, fontWeight: "900" },
-  progressTrack: { flex: 1, height: 7, borderRadius: 99, backgroundColor: "rgba(10,19,32,0.78)", overflow: "hidden" },
-  progressFill: { height: "100%", borderRadius: 99, backgroundColor: "#d9b46f" },
+  hpPill: { backgroundColor: "rgba(255,255,255,0.9)", paddingVertical: 5, paddingHorizontal: 9, borderRadius: 99, borderWidth: 1, borderColor: "#e2dce8" },
+  hpText: { color: "#dc6680", fontSize: 11, fontWeight: "900" },
+  progressTrack: { flex: 1, height: 7, borderRadius: 99, backgroundColor: "rgba(255,255,255,0.84)", overflow: "hidden" },
+  progressFill: { height: "100%", borderRadius: 99, backgroundColor: "#8e94ec" },
   controlRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: 16, gap: 14 },
   directionGroup: { flexDirection: "row", gap: 10 },
   actionGroup: { flexDirection: "row", gap: 10 },
-  controlButton: { width: 58, height: 58, borderRadius: 17, backgroundColor: "#263649", borderWidth: 1, borderColor: "#776850", alignItems: "center", justifyContent: "center" },
+  controlButton: { width: 58, height: 58, borderRadius: 17, backgroundColor: "#e6eaff", borderWidth: 1, borderColor: "#c6cdef", alignItems: "center", justifyContent: "center", boxShadow: "0px 4px 8px rgba(86, 106, 160, 0.12)" },
   controlPressed: { opacity: 0.74, transform: [{ scale: 0.96 }] },
-  controlGlyph: { fontSize: 22, color: "#f1e6d3", fontWeight: "900" },
-  jumpButton: { width: 68, height: 62, borderRadius: 17, backgroundColor: "#b87950", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#e2c17f" },
-  dashButton: { width: 68, height: 62, borderRadius: 17, backgroundColor: "#385966", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#7caaa9" },
-  lockedButton: { backgroundColor: "#333d4a", borderColor: "#62645e" },
-  actionGlyph: { fontSize: 21, color: "#fff2d8", fontWeight: "900", lineHeight: 23 },
-  actionLabel: { fontSize: 8, color: "#fff2d8", fontWeight: "900", letterSpacing: 0.6 },
-  controlHint: { color: "#a4a8ad", fontSize: 10, textAlign: "center", marginTop: 10 },
+  controlGlyph: { fontSize: 22, color: "#5b6799", fontWeight: "900" },
+  jumpButton: { width: 68, height: 62, borderRadius: 17, backgroundColor: "#ffd66e", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#f2be45", boxShadow: "0px 5px 10px rgba(214, 163, 53, 0.2)" },
+  dashButton: { width: 68, height: 62, borderRadius: 17, backgroundColor: "#86dccd", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#61c7b6", boxShadow: "0px 5px 10px rgba(62, 173, 158, 0.18)" },
+  lockedButton: { backgroundColor: "#e5e9f1", borderColor: "#d3d9e4" },
+  actionGlyph: { fontSize: 21, color: "#344965", fontWeight: "900", lineHeight: 23 },
+  actionLabel: { fontSize: 8, color: "#344965", fontWeight: "900", letterSpacing: 0.6 },
+  controlHint: { color: "#7c8ba5", fontSize: 10, textAlign: "center", marginTop: 10 },
 });

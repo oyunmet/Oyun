@@ -12,6 +12,17 @@ export type UpgradeKey =
   | "dash";
 
 export type VehicleId = "bike" | "motorcycle" | "car";
+export type VehicleModelId =
+  | "bike-royal"
+  | "bike-rainbow"
+  | "bike-cloud"
+  | "motorcycle-comet"
+  | "motorcycle-berry"
+  | "motorcycle-jungle"
+  | "car-palace"
+  | "car-sunrise"
+  | "car-ice";
+export type BackgroundId = "royal" | "candy" | "clouds" | "snow" | "dino" | "space";
 export type CharacterId = "knight" | "ranger" | "guardian";
 export type CharacterAttribute = "speed" | "jump" | "health" | "armor";
 export type CharacterUpgradeLevels = Record<CharacterAttribute, number>;
@@ -28,6 +39,10 @@ export type PlayerProfile = {
   characterUpgrades: Record<CharacterId, CharacterUpgradeLevels>;
   vehicle: VehicleId;
   vehiclesOwned: VehicleId[];
+  vehicleModel: VehicleModelId;
+  vehicleModelsOwned: VehicleModelId[];
+  backgroundId: BackgroundId;
+  backgroundsOwned: BackgroundId[];
   soundOn: boolean;
 };
 
@@ -55,11 +70,40 @@ export const DEFAULT_PROFILE: PlayerProfile = {
   },
   vehicle: "bike",
   vehiclesOwned: ["bike"],
+  vehicleModel: "bike-royal",
+  vehicleModelsOwned: ["bike-royal"],
+  backgroundId: "royal",
+  backgroundsOwned: ["royal"],
   soundOn: true,
+};
+
+const DEFAULT_VEHICLE_MODELS: Record<VehicleId, VehicleModelId> = {
+  bike: "bike-royal",
+  motorcycle: "motorcycle-comet",
+  car: "car-palace",
 };
 
 const isVehicleId = (value: unknown): value is VehicleId =>
   value === "bike" || value === "motorcycle" || value === "car";
+
+const isVehicleModelId = (value: unknown): value is VehicleModelId =>
+  value === "bike-royal" ||
+  value === "bike-rainbow" ||
+  value === "bike-cloud" ||
+  value === "motorcycle-comet" ||
+  value === "motorcycle-berry" ||
+  value === "motorcycle-jungle" ||
+  value === "car-palace" ||
+  value === "car-sunrise" ||
+  value === "car-ice";
+
+const isBackgroundId = (value: unknown): value is BackgroundId =>
+  value === "royal" ||
+  value === "candy" ||
+  value === "clouds" ||
+  value === "snow" ||
+  value === "dino" ||
+  value === "space";
 
 const isCharacterId = (value: unknown): value is CharacterId =>
   value === "knight" || value === "ranger" || value === "guardian";
@@ -84,6 +128,26 @@ export function parseProfile(raw: string | null): PlayerProfile {
   const vehicle = isVehicleId(saved.vehicle) && vehiclesOwned.includes(saved.vehicle)
     ? saved.vehicle
     : "bike";
+  const savedVehicleModels = Array.isArray(saved.vehicleModelsOwned)
+    ? saved.vehicleModelsOwned.filter(isVehicleModelId)
+    : [];
+  const vehicleModelsOwned = Array.from(new Set<VehicleModelId>([
+    "bike-royal",
+    ...vehiclesOwned.map((ownedVehicle) => DEFAULT_VEHICLE_MODELS[ownedVehicle]),
+    ...savedVehicleModels,
+  ]));
+  const vehicleModel = isVehicleModelId(saved.vehicleModel) &&
+    saved.vehicleModel.startsWith(`${vehicle}-`) &&
+    vehicleModelsOwned.includes(saved.vehicleModel)
+    ? saved.vehicleModel
+    : DEFAULT_VEHICLE_MODELS[vehicle];
+  const savedBackgrounds = Array.isArray(saved.backgroundsOwned)
+    ? saved.backgroundsOwned.filter(isBackgroundId)
+    : [];
+  const backgroundsOwned = Array.from(new Set<BackgroundId>(["royal", ...savedBackgrounds]));
+  const backgroundId = isBackgroundId(saved.backgroundId) && backgroundsOwned.includes(saved.backgroundId)
+    ? saved.backgroundId
+    : "royal";
   const savedCharacters = Array.isArray(saved.charactersOwned)
     ? saved.charactersOwned.filter(isCharacterId)
     : ["knight" as const];
@@ -119,6 +183,10 @@ export function parseProfile(raw: string | null): PlayerProfile {
     characterUpgrades,
     vehicle,
     vehiclesOwned,
+    vehicleModel,
+    vehicleModelsOwned,
+    backgroundId,
+    backgroundsOwned,
     soundOn: typeof saved.soundOn === "boolean" ? saved.soundOn : true,
     upgrades: {
       speed: clampNumber(upgrades.speed, 0, 0, 5),
