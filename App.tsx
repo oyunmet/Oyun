@@ -20,8 +20,10 @@ import {
   PlayerProfile,
   saveProfile,
   UpgradeKey,
+  VehicleId,
 } from "./src/storage/profile";
 import { purchaseUpgrade, SHOP_ITEMS } from "./src/game/shop";
+import { getVehicleSpec, purchaseVehicle } from "./src/game/vehicles";
 
 type Screen = "menu" | "shop" | "map" | "settings" | "playing" | "completed" | "gameover";
 type Rewards = { gold: number; gems: number };
@@ -33,6 +35,7 @@ export default function App() {
     ...DEFAULT_PROFILE,
     upgrades: { ...DEFAULT_PROFILE.upgrades },
     skinsOwned: [...DEFAULT_PROFILE.skinsOwned],
+    vehiclesOwned: [...DEFAULT_PROFILE.vehiclesOwned],
   }));
   const profileRef = useRef(profile);
   const [loaded, setLoaded] = useState(false);
@@ -138,6 +141,24 @@ export default function App() {
     setToast(`${item.title} kalıcı olarak geliştirildi.`);
   }, [commitProfile]);
 
+  const selectVehicle = useCallback((vehicle: VehicleId) => {
+    const before = profileRef.current;
+    if (before.vehiclesOwned.includes(vehicle)) {
+      commitProfile((current) => ({ ...current, vehicle }));
+      setToast(`${getVehicleSpec(vehicle).name} seçildi.`);
+      return;
+    }
+
+    const next = purchaseVehicle(before, vehicle);
+    if (!next) {
+      setToast("Bu araç için yeterli altın yok.");
+      return;
+    }
+    commitProfile(() => next);
+    playSound("coin", before.soundOn);
+    setToast(`${getVehicleSpec(vehicle).name} satın alındı ve seçildi.`);
+  }, [commitProfile]);
+
   const buySkin = useCallback((skin: number) => {
     const before = profileRef.current;
     if (before.skinsOwned.includes(skin)) {
@@ -187,6 +208,7 @@ export default function App() {
         <GameStage
           key={`level-${selectedLevel}`}
           level={selectedLevel}
+          vehicle={profile.vehicle}
           upgrades={profile.upgrades}
           skin={profile.skin}
           soundOn={profile.soundOn}
@@ -247,6 +269,7 @@ export default function App() {
           onBack={() => setScreen("menu")}
           onBuyUpgrade={buyUpgrade}
           onBuySkin={buySkin}
+          onSelectVehicle={selectVehicle}
         />
       )}
 

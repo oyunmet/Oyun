@@ -1,6 +1,8 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { PlayerProfile, UpgradeKey } from "../storage/profile";
+import { PlayerProfile, UpgradeKey, VehicleId } from "../storage/profile";
 import { canAfford, itemCost, SHOP_ITEMS } from "../game/shop";
+import { VEHICLES } from "../game/vehicles";
+import VehicleSprite from "../components/VehicleSprite";
 
 const SKINS = ["#3b82f6", "#ef5b59", "#55bd87", "#d28d45", "#b57be0", "#ec7eaa"];
 
@@ -9,9 +11,10 @@ type Props = {
   onBack: () => void;
   onBuyUpgrade: (key: UpgradeKey) => void;
   onBuySkin: (skin: number) => void;
+  onSelectVehicle: (vehicle: VehicleId) => void;
 };
 
-export default function ShopScreen({ profile, onBack, onBuyUpgrade, onBuySkin }: Props) {
+export default function ShopScreen({ profile, onBack, onBuyUpgrade, onBuySkin, onSelectVehicle }: Props) {
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
@@ -27,6 +30,43 @@ export default function ShopScreen({ profile, onBack, onBuyUpgrade, onBuySkin }:
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <Text style={styles.sectionTitle}>ARAÇ GARAJI</Text>
+        <View style={styles.vehicleGrid}>
+          {VEHICLES.map((vehicle) => {
+            const owned = profile.vehiclesOwned.includes(vehicle.id);
+            const selected = profile.vehicle === vehicle.id;
+            const enough = profile.gold >= vehicle.price;
+            return (
+              <View key={vehicle.id} style={[styles.vehicleCard, selected && styles.selectedVehicleCard]}>
+                <View style={styles.vehiclePreview}>
+                  <VehicleSprite
+                    vehicle={vehicle.id}
+                    riderColor={SKINS[profile.skin] ?? SKINS[0]}
+                    width={112}
+                    height={72}
+                  />
+                </View>
+                <Text style={styles.vehicleName}>{vehicle.name}</Text>
+                <Text style={styles.vehicleDescription}>{vehicle.description}</Text>
+                <Pressable
+                  onPress={() => onSelectVehicle(vehicle.id)}
+                  style={({ pressed }) => [
+                    styles.vehicleButton,
+                    selected && styles.vehicleSelectedButton,
+                    !owned && !enough && styles.poorButton,
+                    pressed && styles.pressed,
+                  ]}
+                  accessibilityLabel={selected ? `${vehicle.name} kullanılıyor` : owned ? `${vehicle.name} seç` : `${vehicle.name} satın al`}
+                >
+                  <Text style={[styles.vehicleButtonText, !owned && !enough && styles.dimText]}>
+                    {selected ? "KULLANILIYOR" : owned ? "SEÇ" : `● ${vehicle.price}`}
+                  </Text>
+                </Pressable>
+              </View>
+            );
+          })}
+        </View>
+
         <Text style={styles.sectionTitle}>YETENEKLER</Text>
         <View style={styles.cardGrid}>
           {SHOP_ITEMS.map((item) => {
@@ -103,6 +143,15 @@ const styles = StyleSheet.create({
   gem: { color: "#7ee7ed", fontSize: 12, fontWeight: "900" },
   content: { padding: 16, paddingBottom: 32 },
   sectionTitle: { color: "#b2a186", fontSize: 10, letterSpacing: 1.8, fontWeight: "900", marginBottom: 10 },
+  vehicleGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 21 },
+  vehicleCard: { flex: 1, minWidth: 96, backgroundColor: "#1d2b3c", borderWidth: 1, borderColor: "#514c44", borderRadius: 15, padding: 8, alignItems: "center" },
+  selectedVehicleCard: { borderColor: "#d7b675", backgroundColor: "#263547" },
+  vehiclePreview: { height: 68, width: "100%", alignItems: "center", justifyContent: "center", overflow: "hidden" },
+  vehicleName: { color: "#f1e9dc", fontSize: 12, fontWeight: "900", marginTop: 2 },
+  vehicleDescription: { minHeight: 30, color: "#aeb4bd", fontSize: 8, lineHeight: 11, textAlign: "center", marginTop: 3 },
+  vehicleButton: { minHeight: 30, width: "100%", marginTop: 7, borderRadius: 9, backgroundColor: "#b87950", borderWidth: 1, borderColor: "#d2aa68", alignItems: "center", justifyContent: "center", paddingHorizontal: 3 },
+  vehicleSelectedButton: { backgroundColor: "#355448", borderColor: "#6f9876" },
+  vehicleButtonText: { color: "#fff5dd", fontWeight: "900", fontSize: 8, letterSpacing: 0.25, textAlign: "center" },
   cardGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   card: { width: "48%", flexGrow: 1, minWidth: 145, backgroundColor: "#1d2b3c", borderWidth: 1, borderColor: "#514c44", borderRadius: 16, padding: 12 },
   cardTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 9 },

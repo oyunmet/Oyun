@@ -11,6 +11,8 @@ export type UpgradeKey =
   | "magnet"
   | "dash";
 
+export type VehicleId = "bike" | "motorcycle" | "car";
+
 export type PlayerProfile = {
   gold: number;
   gems: number;
@@ -18,6 +20,8 @@ export type PlayerProfile = {
   upgrades: Record<UpgradeKey, number>;
   skin: number;
   skinsOwned: number[];
+  vehicle: VehicleId;
+  vehiclesOwned: VehicleId[];
   soundOn: boolean;
 };
 
@@ -36,8 +40,13 @@ export const DEFAULT_PROFILE: PlayerProfile = {
   },
   skin: 0,
   skinsOwned: [0],
+  vehicle: "bike",
+  vehiclesOwned: ["bike"],
   soundOn: true,
 };
+
+const isVehicleId = (value: unknown): value is VehicleId =>
+  value === "bike" || value === "motorcycle" || value === "car";
 
 const clampNumber = (value: unknown, fallback: number, min: number, max: number) =>
   typeof value === "number" && Number.isFinite(value)
@@ -52,6 +61,13 @@ export function parseProfile(raw: string | null): PlayerProfile {
   const savedSkins = Array.isArray(saved.skinsOwned)
     ? saved.skinsOwned.filter((skin): skin is number => Number.isInteger(skin) && skin >= 0 && skin <= 5)
     : [0];
+  const savedVehicles = Array.isArray(saved.vehiclesOwned)
+    ? saved.vehiclesOwned.filter(isVehicleId)
+    : ["bike" as const];
+  const vehiclesOwned = Array.from(new Set<VehicleId>(["bike", ...savedVehicles]));
+  const vehicle = isVehicleId(saved.vehicle) && vehiclesOwned.includes(saved.vehicle)
+    ? saved.vehicle
+    : "bike";
 
   return {
     gold: clampNumber(saved.gold, DEFAULT_PROFILE.gold, 0, 999999),
@@ -59,6 +75,8 @@ export function parseProfile(raw: string | null): PlayerProfile {
     unlockedLevel: clampNumber(saved.unlockedLevel, 1, 1, 9999),
     skin: clampNumber(saved.skin, 0, 0, 5),
     skinsOwned: Array.from(new Set([0, ...savedSkins])),
+    vehicle,
+    vehiclesOwned,
     soundOn: typeof saved.soundOn === "boolean" ? saved.soundOn : true,
     upgrades: {
       speed: clampNumber(upgrades.speed, 0, 0, 5),

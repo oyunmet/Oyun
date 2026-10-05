@@ -1,10 +1,12 @@
 import type { UpgradeKey } from "../storage/profile";
+import type { VehicleId } from "../storage/profile";
+import { getVehicleSpec } from "./vehicles";
 
 export const SCENE_WIDTH = 360;
 export const SCENE_HEIGHT = 270;
 export const GROUND_Y = 211;
-export const PLAYER_WIDTH = 24;
-export const PLAYER_HEIGHT = 32;
+export const PLAYER_WIDTH = 31;
+export const PLAYER_HEIGHT = 29;
 
 export type ObstacleKind = "spikes" | "pit" | "axe" | "crate" | "platform";
 export type PickupKind = "gold" | "gem" | "heart";
@@ -29,6 +31,7 @@ export type Pickup = {
 
 export type GameState = {
   level: number;
+  vehicle: VehicleId;
   length: number;
   elapsed: number;
   player: {
@@ -77,7 +80,12 @@ function randomFor(seed: number) {
   };
 }
 
-export function createGameState(level: number, upgrades: EngineUpgrades): GameState {
+export function createGameState(
+  level: number,
+  upgrades: EngineUpgrades,
+  vehicle: VehicleId = "bike",
+): GameState {
+  const vehicleSpec = getVehicleSpec(vehicle);
   const random = randomFor(level * 982451653);
   const length = 940 + Math.min(level, 20) * 72;
   const obstacles: Obstacle[] = [];
@@ -147,14 +155,15 @@ export function createGameState(level: number, upgrades: EngineUpgrades): GameSt
     index += 1;
   }
 
-  const maxHp = 3 + upgrades.maxHp;
+  const maxHp = 3 + upgrades.maxHp + vehicleSpec.hpBonus;
   return {
     level,
+    vehicle,
     length,
     elapsed: 0,
     player: {
       x: 34,
-      y: GROUND_Y - PLAYER_HEIGHT,
+      y: GROUND_Y - vehicleSpec.hitboxHeight,
       vy: 0,
       hp: maxHp,
       maxHp,
@@ -201,6 +210,9 @@ export function stepGame(
   const dt = Math.min(0.05, Math.max(0, deltaSeconds));
   const events: GameEvent[] = [];
   const player = state.player;
+  const vehicleSpec = getVehicleSpec(state.vehicle);
+  const playerWidth = vehicleSpec.hitboxWidth;
+  const playerHeight = vehicleSpec.hitboxHeight;
   state.elapsed += dt;
   state.hitCooldown = Math.max(0, state.hitCooldown - dt);
   state.invulnerable = Math.max(0, state.invulnerable - dt);
@@ -211,11 +223,11 @@ export function stepGame(
 
   if (input.jump) {
     if (player.grounded) {
-      player.vy = -(420 + upgrades.jump * 26);
+      player.vy = -(vehicleSpec.jumpVelocity + upgrades.jump * 26);
       player.grounded = false;
       player.doubleJumpUsed = false;
     } else if (upgrades.doubleJump && !player.doubleJumpUsed) {
-      player.vy = -(390 + upgrades.jump * 18);
+      player.vy = -(vehicleSpec.jumpVelocity - 30 + upgrades.jump * 18);
       player.doubleJumpUsed = true;
     }
   }
@@ -224,14 +236,14 @@ export function stepGame(
     state.dashCooldown = 1.1;
   }
 
-  const speed = 164 + upgrades.speed * 17;
+  const speed = vehicleSpec.speed + upgrades.speed * 17;
   const movingDirection = state.dashTime > 0 ? player.direction : direction;
   const movementSpeed = state.dashTime > 0 ? speed * 2.15 : speed;
   player.x += movingDirection * movementSpeed * dt;
   player.x = Math.max(0, Math.min(state.length - 32, player.x));
   state.dashTime = Math.max(0, state.dashTime - dt);
 
-  const previousBottom = player.y + PLAYER_HEIGHT;
+  const previousBottom = player.y + playerHeight;
   player.vy += 1120 * dt;
   player.y += player.vy * dt;
   player.grounded = false;
@@ -239,14 +251,14 @@ export function stepGame(
   const standingPlatform = state.obstacles.find((obstacle) => {
     if (obstacle.kind !== "platform" || obstacle.broken || !obstacle.y) return false;
     return (
-      overlapsX(player.x + 2, PLAYER_WIDTH - 4, obstacle.x, obstacle.width) &&
+      overlapsX(player.x + 2, playerWidth - 4, obstacle.x, obstacle.width) &&
       player.vy >= 0 &&
       previousBottom <= obstacle.y + 8 &&
-      player.y + PLAYER_HEIGHT >= obstacle.y
+      player.y + playerHeight >= obstacle.y
     );
   });
   if (standingPlatform?.y) {
-    player.y = standingPlatform.y - PLAYER_HEIGHT;
+    player.y = standingPlatform.y - playerHeight;
     player.vy = 0;
     player.grounded = true;
     standingPlatform.breakingFor = (standingPlatform.breakingFor ?? 0) + dt;
@@ -255,10 +267,10 @@ export function stepGame(
     const abovePit = state.obstacles.some(
       (obstacle) =>
         obstacle.kind === "pit" &&
-        overlapsX(player.x + 4, PLAYER_WIDTH - 8, obstacle.x, obstacle.width),
+        overlapsX(player.x + 4, playerWidth - 8, obstacle.x, obstacle.width),
     );
-    if (!abovePit && player.y + PLAYER_HEIGHT >= GROUND_Y) {
-      player.y = GROUND_Y - PLAYER_HEIGHT;
+    if (!abovePit && player.y + playerHeight >= GROUND_Y) {
+      player.y = GROUND_Y - playerHeight;
       player.vy = 0;
       player.grounded = true;
       player.doubleJumpUsed = false;
@@ -271,10 +283,10 @@ export function stepGame(
       const pit = state.obstacles.find(
         (obstacle) =>
           obstacle.kind === "pit" &&
-          overlapsX(player.x + 4, PLAYER_WIDTH - 8, obstacle.x, obstacle.width),
+          overlapsX(player.x + 4, playerWidth - 8, obstacle.x, obstacle.width),
       );
       player.x = pit ? Math.max(16, pit.x - 32) : Math.max(16, player.x - 45);
-      player.y = GROUND_Y - PLAYER_HEIGHT;
+      player.y = GROUND_Y - playerHeight;
       player.vy = 0;
       player.grounded = true;
     }
@@ -282,20 +294,20 @@ export function stepGame(
 
   const hitObstacle = state.obstacles.find((obstacle) => {
     if (obstacle.kind === "pit" || obstacle.kind === "platform" || obstacle.broken) return false;
-    if (!overlapsX(player.x + 3, PLAYER_WIDTH - 6, obstacle.x, obstacle.width)) return false;
+    if (!overlapsX(player.x + 3, playerWidth - 6, obstacle.x, obstacle.width)) return false;
     if (obstacle.kind === "spikes" || obstacle.kind === "crate") {
-      return player.y + PLAYER_HEIGHT > GROUND_Y - (obstacle.kind === "spikes" ? 24 : 31);
+      return player.y + playerHeight > GROUND_Y - (obstacle.kind === "spikes" ? 24 : 31);
     }
     const axeY = GROUND_Y - 85 + Math.sin(state.elapsed * 4 + obstacle.x) * 24;
-    return player.y < axeY + 25 && player.y + PLAYER_HEIGHT > axeY - 18;
+    return player.y < axeY + 25 && player.y + playerHeight > axeY - 18;
   });
   if (hitObstacle && state.hitCooldown <= 0) hurt(state, events, upgrades.armor);
 
   const magnetRange = upgrades.magnet ? 104 : 20;
   for (const pickup of state.pickups) {
     if (pickup.collected) continue;
-    const dx = pickup.x - (player.x + PLAYER_WIDTH / 2);
-    const dy = pickup.y - (player.y + PLAYER_HEIGHT / 2);
+    const dx = pickup.x - (player.x + playerWidth / 2);
+    const dy = pickup.y - (player.y + playerHeight / 2);
     if (Math.abs(dx) <= magnetRange && Math.abs(dy) <= (upgrades.magnet ? 126 : 30)) {
       pickup.collected = true;
       if (pickup.kind === "gold") {

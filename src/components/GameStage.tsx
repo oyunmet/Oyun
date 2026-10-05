@@ -2,12 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import {
   Animated,
   LayoutChangeEvent,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
   View,
+  type ViewStyle,
 } from "react-native";
 import { CastleSprite, HorseSprite, PrincessSprite } from "./GameSprites";
+import GameBackdrop from "./GameBackdrop";
+import VehicleSprite from "./VehicleSprite";
 import {
   createGameState,
   GameEvent,
@@ -16,20 +20,21 @@ import {
   GROUND_Y,
   Obstacle,
   Pickup,
-  PLAYER_HEIGHT,
-  PLAYER_WIDTH,
   SCENE_HEIGHT,
   SCENE_WIDTH,
   stepGame,
 } from "../game/engine";
 import { EngineUpgrades } from "../game/engine";
-import { UpgradeKey } from "../storage/profile";
+import { getVehicleSpec } from "../game/vehicles";
+import { UpgradeKey, VehicleId } from "../storage/profile";
 import { playSound } from "../audio/sounds";
 
 const SKINS = ["#3b82f6", "#ef5b59", "#55bd87", "#d28d45", "#b57be0", "#ec7eaa"];
+const WEB_TOUCH_STYLE = { userSelect: "none", touchAction: "none" } as unknown as ViewStyle;
 
 type Props = {
   level: number;
+  vehicle: VehicleId;
   upgrades: Record<UpgradeKey, number>;
   skin: number;
   soundOn: boolean;
@@ -45,39 +50,6 @@ function snapshot(state: GameState): GameState {
     obstacles: state.obstacles.map((obstacle) => ({ ...obstacle })),
     pickups: state.pickups.map((pickup) => ({ ...pickup })),
   };
-}
-
-function Character({ color, scale, left, top, invulnerable, dash }: {
-  color: string;
-  scale: number;
-  left: number;
-  top: number;
-  invulnerable: boolean;
-  dash: boolean;
-}) {
-  return (
-    <View
-      style={[
-        styles.character,
-        {
-          left,
-          top,
-          width: PLAYER_WIDTH * scale,
-          height: PLAYER_HEIGHT * scale,
-          opacity: invulnerable ? 0.55 : 1,
-          transform: [{ scaleX: dash ? 1.18 : 1 }],
-          pointerEvents: "none",
-        },
-      ]}
-    >
-      <View style={[styles.helmet, { backgroundColor: color, height: 10 * scale }]} />
-      <View style={[styles.face, { left: 7 * scale, top: 7 * scale, width: 11 * scale, height: 8 * scale }]} />
-      <View style={[styles.torso, { backgroundColor: color, left: 4 * scale, top: 14 * scale, width: 16 * scale, height: 11 * scale }]} />
-      <View style={[styles.boot, { left: 2 * scale, top: 25 * scale }]} />
-      <View style={[styles.boot, { left: 13 * scale, top: 25 * scale }]} />
-      <View style={[styles.sword, { top: 12 * scale, left: 20 * scale, width: 3 * scale, height: 15 * scale }]} />
-    </View>
-  );
 }
 
 function obstacleView(obstacle: Obstacle, left: number, scale: number, elapsed: number) {
@@ -159,12 +131,13 @@ function PickupSprite({ pickup, left, scale }: { pickup: Pickup; left: number; s
   );
 }
 
-export default function GameStage({ level, upgrades, skin, soundOn, onExit, onComplete, onGameOver }: Props) {
+export default function GameStage({ level, vehicle, upgrades, skin, soundOn, onExit, onComplete, onGameOver }: Props) {
   const input = useRef<GameInput>({ left: false, right: false, jump: false, dash: false });
   const pendingJump = useRef(false);
   const pendingDash = useRef(false);
+  const pointerHolds = useRef(new Map<number, "left" | "right">());
   const frameRef = useRef(0);
-  const stateRef = useRef(createGameState(level, upgrades as EngineUpgrades));
+  const stateRef = useRef(createGameState(level, upgrades as EngineUpgrades, vehicle));
   const [viewState, setViewState] = useState(() => snapshot(stateRef.current));
   const [stageWidth, setStageWidth] = useState(SCENE_WIDTH);
   const [cinematic, setCinematic] = useState(false);
@@ -172,9 +145,10 @@ export default function GameStage({ level, upgrades, skin, soundOn, onExit, onCo
   const lastTime = useRef(0);
   const resultSent = useRef(false);
   const scale = stageWidth / SCENE_WIDTH;
+  const vehicleSpec = getVehicleSpec(vehicle);
   const cameraX = Math.max(0, Math.min(viewState.length - SCENE_WIDTH, viewState.player.x - 126));
-  const playerLeft = (viewState.player.x - cameraX) * scale;
-  const playerTop = viewState.player.y * scale;
+  const playerLeft = (viewState.player.x - cameraX - (vehicleSpec.spriteWidth - vehicleSpec.hitboxWidth) / 2) * scale;
+  const playerTop = (viewState.player.y + vehicleSpec.hitboxHeight - vehicleSpec.spriteHeight) * scale;
   const tint = SKINS[skin] ?? SKINS[0];
 
   const measureStage = (event: LayoutChangeEvent) => {
@@ -183,7 +157,7 @@ export default function GameStage({ level, upgrades, skin, soundOn, onExit, onCo
   };
 
   useEffect(() => {
-    stateRef.current = createGameState(level, upgrades as EngineUpgrades);
+    stateRef.current = createGameState(level, upgrades as EngineUpgrades, vehicle);
     setViewState(snapshot(stateRef.current));
     input.current = { left: false, right: false, jump: false, dash: false };
     pendingJump.current = false;
@@ -191,7 +165,7 @@ export default function GameStage({ level, upgrades, skin, soundOn, onExit, onCo
     setCinematic(false);
     resultSent.current = false;
     horseX.setValue(SCENE_WIDTH + 75);
-  }, [level, upgrades, horseX]);
+  }, [level, upgrades, vehicle, horseX]);
 
   useEffect(() => {
     let active = true;
@@ -243,7 +217,25 @@ export default function GameStage({ level, upgrades, skin, soundOn, onExit, onCo
   }, [upgrades, soundOn, onComplete, onGameOver, horseX]);
 
   const setHeld = (key: "left" | "right", held: boolean) => {
-    input.current[key] = held;
+    input.current[key] = held || Array.from(pointerHolds.current.values()).includes(key);
+  };
+  const setPointerHeld = (
+    key: "left" | "right",
+    held: boolean,
+    event: { nativeEvent: { pointerId: number } },
+  ) => {
+    const pointerId = event.nativeEvent.pointerId;
+    if (held) pointerHolds.current.set(pointerId, key);
+    else pointerHolds.current.delete(pointerId);
+    input.current[key] = Array.from(pointerHolds.current.values()).includes(key);
+  };
+  const triggerJump = () => {
+    pendingJump.current = true;
+    playSound("jump", soundOn);
+  };
+  const triggerDash = () => {
+    pendingDash.current = true;
+    if (upgrades.dash) playSound("dash", soundOn);
   };
   const liveObstacles = viewState.obstacles.filter((obstacle) => {
     const x = (obstacle.x - cameraX) * scale;
@@ -266,7 +258,9 @@ export default function GameStage({ level, upgrades, skin, soundOn, onExit, onCo
 
       <View onLayout={measureStage} style={styles.stage}>
         <View style={[styles.sky, { height: SCENE_HEIGHT * scale }]}>
-          <View style={[styles.moon, { right: 39 * scale, top: 28 * scale, width: 27 * scale, height: 27 * scale }]} />
+          <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+            <GameBackdrop cameraX={cameraX} elapsed={viewState.elapsed} level={level} />
+          </View>
           <View style={[styles.cloud, { left: 48 * scale, top: 62 * scale, transform: [{ scale: scale }] }]}>
             <View style={styles.cloudPuffLeft} /><View style={styles.cloudPuffTop} /><View style={styles.cloudPuffRight} />
           </View>
@@ -287,14 +281,27 @@ export default function GameStage({ level, upgrades, skin, soundOn, onExit, onCo
           {livePickups.map((pickup) =>
             <PickupSprite key={pickup.id} pickup={pickup} left={(pickup.x - cameraX) * scale} scale={scale} />,
           )}
-          <Character
-            color={tint}
-            scale={scale}
-            left={playerLeft}
-            top={playerTop}
-            invulnerable={viewState.invulnerable > 0}
-            dash={viewState.dashTime > 0}
-          />
+          <View
+            pointerEvents="none"
+            style={[
+              styles.vehicleSprite,
+              {
+                left: playerLeft,
+                top: playerTop,
+                width: vehicleSpec.spriteWidth * scale,
+                height: vehicleSpec.spriteHeight * scale,
+                opacity: viewState.invulnerable > 0 ? 0.58 : 1,
+                transform: [{ scaleX: viewState.dashTime > 0 ? 1.08 : 1 }],
+              },
+            ]}
+          >
+            <VehicleSprite
+              vehicle={vehicle}
+              riderColor={tint}
+              width={vehicleSpec.spriteWidth * scale}
+              height={vehicleSpec.spriteHeight * scale}
+            />
+          </View>
           {cinematic && (
             <View style={styles.cinematicCover}>
               <Text style={styles.cinematicTitle}>ATLI PRENSESİ KAÇIRDI!</Text>
@@ -318,20 +325,26 @@ export default function GameStage({ level, upgrades, skin, soundOn, onExit, onCo
         </View>
       </View>
 
-      <View style={styles.controlRow}>
+      <View style={[styles.controlRow, Platform.OS === "web" && WEB_TOUCH_STYLE]}>
         <View style={styles.directionGroup}>
           <Pressable
-            onPressIn={() => setHeld("left", true)}
-            onPressOut={() => setHeld("left", false)}
-            style={({ pressed }) => [styles.controlButton, pressed && styles.controlPressed]}
+            onPressIn={Platform.OS === "web" ? undefined : () => setHeld("left", true)}
+            onPressOut={Platform.OS === "web" ? undefined : () => setHeld("left", false)}
+            onPointerDown={(event) => setPointerHeld("left", true, event)}
+            onPointerUp={(event) => setPointerHeld("left", false, event)}
+            onPointerCancel={(event) => setPointerHeld("left", false, event)}
+            style={({ pressed }) => [styles.controlButton, Platform.OS === "web" && WEB_TOUCH_STYLE, pressed && styles.controlPressed]}
             accessibilityLabel="Sola git"
           >
             <Text style={styles.controlGlyph}>◀</Text>
           </Pressable>
           <Pressable
-            onPressIn={() => setHeld("right", true)}
-            onPressOut={() => setHeld("right", false)}
-            style={({ pressed }) => [styles.controlButton, pressed && styles.controlPressed]}
+            onPressIn={Platform.OS === "web" ? undefined : () => setHeld("right", true)}
+            onPressOut={Platform.OS === "web" ? undefined : () => setHeld("right", false)}
+            onPointerDown={(event) => setPointerHeld("right", true, event)}
+            onPointerUp={(event) => setPointerHeld("right", false, event)}
+            onPointerCancel={(event) => setPointerHeld("right", false, event)}
+            style={({ pressed }) => [styles.controlButton, Platform.OS === "web" && WEB_TOUCH_STYLE, pressed && styles.controlPressed]}
             accessibilityLabel="Sağa git"
           >
             <Text style={styles.controlGlyph}>▶</Text>
@@ -339,16 +352,18 @@ export default function GameStage({ level, upgrades, skin, soundOn, onExit, onCo
         </View>
         <View style={styles.actionGroup}>
           <Pressable
-            onPressIn={() => { pendingJump.current = true; playSound("jump", soundOn); }}
-            style={({ pressed }) => [styles.jumpButton, pressed && styles.controlPressed]}
+            onPressIn={Platform.OS === "web" ? undefined : triggerJump}
+            onPointerDown={Platform.OS === "web" ? triggerJump : undefined}
+            style={({ pressed }) => [styles.jumpButton, Platform.OS === "web" && WEB_TOUCH_STYLE, pressed && styles.controlPressed]}
             accessibilityLabel="Zıpla"
           >
             <Text style={styles.actionGlyph}>↑</Text>
             <Text style={styles.actionLabel}>ZIPLA</Text>
           </Pressable>
           <Pressable
-            onPressIn={() => { pendingDash.current = true; if (upgrades.dash) playSound("dash", soundOn); }}
-            style={({ pressed }) => [styles.dashButton, pressed && styles.controlPressed, !upgrades.dash && styles.lockedButton]}
+            onPressIn={Platform.OS === "web" ? undefined : triggerDash}
+            onPointerDown={Platform.OS === "web" ? triggerDash : undefined}
+            style={({ pressed }) => [styles.dashButton, Platform.OS === "web" && WEB_TOUCH_STYLE, pressed && styles.controlPressed, !upgrades.dash && styles.lockedButton]}
             accessibilityLabel={upgrades.dash ? "Atıl" : "Atılma kilitli"}
           >
             <Text style={styles.actionGlyph}>{upgrades.dash ? "➤" : "·"}</Text>
@@ -372,7 +387,6 @@ const styles = StyleSheet.create({
   miniGem: { color: "#7ee7ed", fontWeight: "900", fontSize: 12 },
   stage: { width: "100%", maxWidth: 520, alignSelf: "center", aspectRatio: SCENE_WIDTH / SCENE_HEIGHT, borderWidth: 2, borderRadius: 18, borderColor: "#9b805e", overflow: "hidden", backgroundColor: "#182638" },
   sky: { width: "100%", backgroundColor: "#243446", overflow: "hidden" },
-  moon: { position: "absolute", borderRadius: 99, backgroundColor: "#f1d799", elevation: 3 },
   cloud: { position: "absolute", width: 42, height: 17 },
   cloudPuffLeft: { position: "absolute", left: 3, bottom: 0, width: 21, height: 11, borderRadius: 99, backgroundColor: "rgba(236,223,196,0.5)" },
   cloudPuffTop: { position: "absolute", left: 13, top: 0, width: 17, height: 15, borderRadius: 99, backgroundColor: "rgba(236,223,196,0.58)" },
@@ -387,12 +401,7 @@ const styles = StyleSheet.create({
   chain: { width: 3, alignSelf: "center", backgroundColor: "#afa58f" },
   axe: { backgroundColor: "#c6c9bf", borderRadius: 3, borderWidth: 3, borderColor: "#727c7c", marginLeft: -10 },
   pickup: { position: "absolute", borderWidth: 2, borderRadius: 99, backgroundColor: "#18283d", alignItems: "center", justifyContent: "center" },
-  character: { position: "absolute", zIndex: 4 },
-  helmet: { position: "absolute", left: 3, right: 3, top: 0, borderTopLeftRadius: 8, borderTopRightRadius: 8, borderWidth: 1, borderColor: "#c7e6ff" },
-  face: { position: "absolute", backgroundColor: "#ffdfa9", borderRadius: 2 },
-  torso: { position: "absolute", borderRadius: 3, borderWidth: 1, borderColor: "#c7e6ff" },
-  boot: { position: "absolute", width: 9, height: 6, backgroundColor: "#f0c078", borderRadius: 2 },
-  sword: { position: "absolute", backgroundColor: "#e4f6ff", borderRadius: 2, transform: [{ rotate: "24deg" }] },
+  vehicleSprite: { position: "absolute", zIndex: 4, alignItems: "center", justifyContent: "center" },
   cinematicCover: { ...StyleSheet.absoluteFill, backgroundColor: "rgba(10,16,28,0.48)", alignItems: "center", justifyContent: "center", zIndex: 8 },
   cinematicTitle: { color: "#fff0c8", fontFamily: "serif", fontSize: 17, fontWeight: "700", letterSpacing: 1, marginBottom: 35 },
   horse: { position: "absolute", top: "52%", left: 0, alignItems: "center", flexDirection: "row" },
